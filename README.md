@@ -49,3 +49,16 @@ python3 -m http.server 8000
   `1d8+2`.
 - This is an unofficial fan-made tool. It ships with no game content —
   you enter your own guns and stats from your own books.
+
+## Testing
+
+`test/exhaustive.js` is a Playwright suite (136 checks) covering every
+control — dice, clamps, gun form validation/edit/scrap, attack bands
+(forced nat 1/nat 20 via a stubbed RNG), loot generation, gear kinds,
+equip syncing, badass-token boosts/rerolls, log capping, persistence,
+and horizontal-overflow checks at six viewport widths from 320px up.
+
+```sh
+npm install playwright-core
+node test/exhaustive.js          # set CHROMIUM_PATH if needed
+```

@@ -42,6 +42,17 @@
     outline-offset: 2px;
   }
 
+  @media (max-width: 560px) {
+    .logo .title { font-size: 24px; }
+    .hud-inner { gap: 10px 16px; padding: 10px 12px 8px; }
+    .tabs { flex-wrap: wrap; padding: 0 12px; }
+    .tab { font-size: 16px; padding: 7px 14px 5px; }
+    main { padding: 0 12px; }
+    .panel { padding: 12px; }
+    .log li { grid-template-columns: 56px 1fr; gap: 8px; }
+    .log .total { font-size: 30px; }
+  }
+
   /* ---------- header ---------- */
   .hud {
     position: sticky;
@@ -283,6 +294,7 @@
     padding: 4px 10px;
   }
   .ghostbtn:hover { color: var(--ink); border-color: var(--muted); }
+  .ghostbtn.armed { color: var(--crit); border-color: var(--crit); font-weight: 700; }
   .log { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; max-height: 520px; overflow-y: auto; }
   .log li {
     display: grid;
@@ -334,7 +346,7 @@
   .tokenbtn:hover { background: var(--accent); color: var(--accent-ink); }
 
   /* ---------- guns ---------- */
-  .gun-list-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .gun-list-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
   .primarybtn {
     background: var(--accent);
     border: 1px solid var(--accent);
@@ -348,7 +360,7 @@
     clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
   }
   .primarybtn:hover { background: #ffcb3d; }
-  .gun-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .gun-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 14px; }
   .gun { border-left: 4px solid var(--rarity, var(--muted)); display: flex; flex-direction: column; gap: 10px; }
   .gun .gname {
     font-family: var(--display);
@@ -357,7 +369,9 @@
     letter-spacing: 0.03em;
     text-transform: uppercase;
     line-height: 1.05;
+    overflow-wrap: anywhere;
   }
+  .hud-char .who, .log .what, .gun-result .rdetail, .geffect { overflow-wrap: anywhere; }
   .gun .gmeta { color: var(--muted); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
   .gun .gtags { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip {
@@ -930,6 +944,20 @@
     });
   }
 
+  // confirm() is blocked in sandboxed iframes, so destructive buttons arm
+  // for 2.5s ("Sure?") and delete on the second click instead.
+  function armConfirm(btn) {
+    btn.dataset.armed = "1";
+    btn.classList.add("armed");
+    btn.textContent = "Sure?";
+    setTimeout(function () {
+      if (!btn.isConnected || !btn.dataset.armed) return;
+      delete btn.dataset.armed;
+      btn.classList.remove("armed");
+      btn.textContent = "Scrap";
+    }, 2500);
+  }
+
   function spendToken() {
     if (state.character.badass <= 0) return false;
     state.character.badass -= 1;
@@ -1401,10 +1429,11 @@
       return;
     }
     if (btn.dataset.del) {
-      var gunD = state.guns.find(function (g) { return g.id === btn.dataset.del; });
-      if (gunD && confirm("Scrap " + gunD.name + "? This can't be undone.")) {
+      if (btn.dataset.armed) {
         state.guns = state.guns.filter(function (g) { return g.id !== btn.dataset.del; });
         save(); renderGuns();
+      } else {
+        armConfirm(btn);
       }
       return;
     }
@@ -1466,13 +1495,14 @@
       return;
     }
     if (btn.dataset.geardel) {
-      var gearD = state.gear.find(function (g) { return g.id === btn.dataset.geardel; });
-      if (gearD && confirm("Scrap " + gearD.name + "? This can't be undone.")) {
+      if (btn.dataset.armed) {
         state.gear = state.gear.filter(function (g) { return g.id !== btn.dataset.geardel; });
         if (state.character.equippedShield === btn.dataset.geardel) {
           delete state.character.equippedShield;
         }
         save(); renderGear();
+      } else {
+        armConfirm(btn);
       }
       return;
     }

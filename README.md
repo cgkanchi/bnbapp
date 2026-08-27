@@ -10,7 +10,9 @@ tabletop RPG). No build step, no server, no dependencies — open
   one-tap skill checks (d20 + your ACC/DMG/SPD/MST mod), melee checks, and
   a roll log that flags natural 20s (Badass!) and natural 1s.
 - **Gun locker** — store each gun's type, manufacturer, rarity, element,
-  range, damage dice, crit dice, and its accuracy bar (hits/crits at 2–7,
+  range, damage dice, crit dice, traits (the card's red text — stat mods,
+  conditionals, keywords; element riders like "Shock: 2x Damage to
+  Shields" show automatically), and its accuracy bar (hits/crits at 2–7,
   8–15, 16+). One **Attack** button resolves the whole thing: rolls
   d20 + ACC mod, reads the matching accuracy band, adds a bonus crit on a
   natural 20, misses on a natural 1, then rolls all hit and crit dice and
@@ -18,7 +20,10 @@ tabletop RPG). No build step, no server, no dependencies — open
 - **Random gun generator** — the **Loot a gun** button rolls up a gun at
   your character's level — any type, or a type you pick from the
   dropdown: manufacturer, level-weighted rarity,
-  element chance, scaled damage dice, and a procedurally generated name.
+  element chance, scaled damage dice, a procedurally generated name, and
+  rolled traits in the style of the official gun cards — commons get
+  tradeoffs (or nothing), legendaries get stat perks, conditionals, and
+  occasionally something weird.
   Edit it afterwards if your GM hands you something different.
 - **Gear tab** — shields (capacity + recharge; **Equip** sets your shield
   pool), grenade mods (damage dice + element with a one-tap **Throw**
@@ -97,7 +102,7 @@ copy and can't edit files, the Skills tab has an **Import class data
 
 ## Testing
 
-`test/exhaustive.js` is a Playwright suite (194 checks) covering every
+`test/exhaustive.js` is a Playwright suite (199 checks) covering every
 control — dice, clamps, gun form validation/edit/scrap, attack bands
 (forced nat 1/nat 20 via a stubbed RNG), loot generation, gear kinds,
 equip syncing, badass-token boosts/rerolls, log capping, persistence,

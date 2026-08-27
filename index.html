@@ -385,6 +385,8 @@
     background: var(--ground);
   }
   .chip.element { border-color: var(--el, var(--edge)); color: var(--el, var(--ink)); }
+  .gtraits { color: #ff9d70; font-size: 13px; font-style: italic; overflow-wrap: anywhere; }
+  .grider { color: var(--el, var(--muted)); font-size: 11px; letter-spacing: 0.04em; }
   .acc-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .acc-table th {
     text-align: left;
@@ -768,6 +770,10 @@
             <label for="g-crit">Bonus per crit</label>
             <input id="g-crit" value="1d8" required pattern="\s*\d{1,2}[dD]\d{1,3}\s*([+\-]\s*\d{1,3})?\s*" title="Dice like 1d8 or 2d10+1">
           </div>
+          <div class="field" style="grid-column: 1 / -1;">
+            <label for="g-traits">Traits (the card's red text)</label>
+            <input id="g-traits" maxlength="200" placeholder="e.g. -2 DMG Mod. +1 ACC Mod. If Range 3+: ACC Mod +3.">
+          </div>
         </div>
         <div class="tier-grid">
           <div class="tier">
@@ -998,6 +1004,14 @@
   var STORE_KEY = "bnb-echo-deck-v1";
   var CLASS_KEY = "bnb-echo-deck-classes";
 
+  var ELEMENT_RIDERS = {
+    "Incendiary": "Deals 2x Damage to Flesh",
+    "Shock": "Deals 2x Damage to Shields",
+    "Corrosive": "Deals 2x Damage to Armor",
+    "Radiation": "Spreads Damage to adjacent enemies",
+    "Cryo": "Slows and Freezes enemies",
+    "Explosive": "Splash Damage"
+  };
   var ELEMENT_COLORS = {
     "Incendiary": "#ff6a2a",
     "Shock": "#4db8ff",
@@ -1388,6 +1402,37 @@
   };
   var CRIT_BY_RARITY = { "Common": "1d8", "Uncommon": "1d8", "Rare": "1d10", "Epic": "1d12", "Legendary": "2d10" };
   var ELEMENT_CHANCE = { "Common": 0.1, "Uncommon": 0.25, "Rare": 0.4, "Epic": 0.6, "Legendary": 0.8 };
+  var TRAIT_STAT = ["+1 ACC Mod.", "+2 ACC Mod.", "+1 DMG Mod.", "+2 DMG Mod.", "+3 Crit Damage.", "+5 Crit Damage.", "+1 SPD Mod.", "+1 MST Mod."];
+  var TRAIT_TRADEOFF = ["-2 DMG Mod. +1 ACC Mod.", "-1 DMG Mod. +2 ACC Mod.", "-2 ACC Mod. +2 DMG Mod.", "-2 DMG Mod. +4 ACC Mod.", "-1 ACC Mod. +3 Crit Damage."];
+  var TRAIT_KEYWORD = ["Splash.", "Burst: +1 Hit.", "Crit added to each Range.", "Knockback 1.", "Ignores 5 points of Shield."];
+  var TRAIT_COND = ["If Range 2 or Less: Damage +2.", "If Range 3+: ACC Mod +3.", "While Shields are depleted: +2 DMG Mod.", "After a kill: +1 ACC Mod for 1 turn.", "First attack each encounter: +1 Crit."];
+  var TRAIT_WEIRD = [
+    "Shouts an insult at whatever it Crits.",
+    "On a Nat 20: the target also drops 1d4 gold.",
+    "Screams 'RELOADING!' when reloaded. -1 on Sneak Checks.",
+    "Glows faintly in the dark. It never turns off.",
+    "Counts your kills out loud. Always off by one."
+  ];
+
+  function generateTraits(rarity) {
+    var t = [];
+    if (rarity === "Common") {
+      if (Math.random() < 0.6) t.push(pick(TRAIT_TRADEOFF));
+    } else if (rarity === "Uncommon") {
+      t.push(pick(Math.random() < 0.5 ? TRAIT_STAT : TRAIT_TRADEOFF));
+    } else if (rarity === "Rare") {
+      t.push(pick(TRAIT_STAT));
+      if (Math.random() < 0.4) t.push(pick(TRAIT_KEYWORD));
+    } else if (rarity === "Epic") {
+      t.push(pick(TRAIT_STAT));
+      t.push(pick(Math.random() < 0.5 ? TRAIT_COND : TRAIT_KEYWORD));
+    } else {
+      t.push(pick(TRAIT_STAT));
+      t.push(pick(TRAIT_COND));
+      if (Math.random() < 0.35) t.push(pick(TRAIT_WEIRD));
+    }
+    return t.join(" ");
+  }
 
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
   function weightedPick(pairs) {
@@ -1431,6 +1476,7 @@
       range: arch.range, element: element,
       dmg: count + "d" + arch.die + (flat ? "+" + flat : ""),
       crit: CRIT_BY_RARITY[rarity],
+      traits: generateTraits(rarity),
       tiers: tiers
     };
   }
@@ -1503,6 +1549,9 @@
         ? '<span class="chip element" style="--el:' + elColor + '">' + esc(g.element) + "</span>" : "";
       var favChip = state.character.favoredGun && g.type === state.character.favoredGun
         ? '<span class="chip favored">Favored</span>' : "";
+      var traits = g.traits ? '<div class="gtraits">' + esc(g.traits) + "</div>" : "";
+      var rider = ELEMENT_RIDERS[g.element]
+        ? '<div class="grider" style="--el:' + ELEMENT_COLORS[g.element] + '">' + esc(g.element) + ": " + ELEMENT_RIDERS[g.element] + "</div>" : "";
       var last = g.lastResult
         ? '<div class="gun-result"><div class="rline">' + esc(g.lastResult.headline) +
           '</div><div class="rdetail">' + esc(g.lastResult.detail) + "</div></div>"
@@ -1515,6 +1564,7 @@
         '<span class="chip">Range ' + int(g.range, 0) + "</span>" +
         '<span class="chip">Dmg ' + esc(g.dmg) + "/hit</span>" +
         '<span class="chip">Crit +' + esc(g.crit) + "</span></div>" +
+        traits + rider +
         '<table class="acc-table"><tr><th>Roll</th><th>2–7</th><th>8–15</th><th>16+</th></tr>' +
         "<tr><td>Hits</td><td>" + int(g.tiers.low.hits, 0) + "</td><td>" + int(g.tiers.mid.hits, 0) +
         "</td><td>" + int(g.tiers.high.hits, 0) + "</td></tr>" +
@@ -1805,6 +1855,7 @@
     $("g-element").value = gun ? gun.element : "None";
     $("g-dmg").value = gun ? gun.dmg : "1d6";
     $("g-crit").value = gun ? gun.crit : "1d8";
+    $("g-traits").value = gun && gun.traits ? gun.traits : "";
     ["low", "mid", "high"].forEach(function (t) {
       $("g-" + t + "-hits").value = gun ? gun.tiers[t].hits : { low: 1, mid: 2, high: 2 }[t];
       $("g-" + t + "-crits").value = gun ? gun.tiers[t].crits : { low: 0, mid: 0, high: 1 }[t];
@@ -1828,6 +1879,7 @@
       element: $("g-element").value,
       dmg: $("g-dmg").value.trim().toLowerCase(),
       crit: $("g-crit").value.trim().toLowerCase(),
+      traits: $("g-traits").value.trim(),
       tiers: {
         low: { hits: clamp(int($("g-low-hits").value, 0), 0, 9), crits: clamp(int($("g-low-crits").value, 0), 0, 9) },
         mid: { hits: clamp(int($("g-mid-hits").value, 0), 0, 9), crits: clamp(int($("g-mid-crits").value, 0), 0, 9) },

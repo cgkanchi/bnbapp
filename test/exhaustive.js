@@ -173,6 +173,24 @@ function section(name) { console.log('\n== ' + name + ' =='); }
     JSON.stringify(looted.map(g => g.dmg)));
   check('looted guns have names/types/mfrs', looted.every(g => g.name && g.type && g.mfr && g.rarity));
   check('looted tiers complete', looted.every(g => ['low', 'mid', 'high'].every(t => Number.isFinite(g.tiers[t].hits) && Number.isFinite(g.tiers[t].crits))));
+  // gun traits: forced 0.9999 rolls a Legendary, which always carries traits
+  await forceRandom(0.9999);
+  await page.click('#loot-gun');
+  await restoreRandom();
+  const legendary = (await getState()).guns[0];
+  check('forced loot is Legendary', legendary.rarity === 'Legendary', legendary.rarity);
+  check('legendary loot has traits', typeof legendary.traits === 'string' && legendary.traits.length > 0, legendary.traits);
+  check('traits render on the card', await page.locator('.gun', { hasText: legendary.name }).locator('.gtraits').count() === 1);
+  // traits + element rider via the form
+  await page.click('#add-gun');
+  await page.fill('#g-name', 'Acid Reflux');
+  await page.selectOption('#g-element', 'Corrosive');
+  await page.fill('#g-traits', 'If Range 2 or Less: Damage +2.');
+  await page.click('#gunform-save');
+  const acidCard = page.locator('.gun', { hasText: 'Acid Reflux' });
+  check('manual traits render', (await acidCard.locator('.gtraits').textContent()).includes('Range 2 or Less'));
+  check('element rider shown', (await acidCard.locator('.grider').textContent()).includes('2x Damage to Armor'));
+
   // typed loot
   await page.selectOption('#loot-type', 'Sniper Rifle');
   await page.evaluate(() => { for (let i = 0; i < 3; i++) document.getElementById('loot-gun').click(); });

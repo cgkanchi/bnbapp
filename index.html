@@ -1,0 +1,1162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECHO Deck</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --ground: #17141a;
+    --panel: #211d26;
+    --panel-2: #2a2531;
+    --edge: #3a3342;
+    --ink: #f0ead8;
+    --muted: #9b8fa3;
+    --accent: #f5b81c;
+    --accent-ink: #1b1408;
+    --crit: #ff6a2a;
+    --hp: #e14b4b;
+    --shield: #4db8ff;
+    --armor: #d9b23a;
+    --good: #8fd42a;
+    --display: "Big Shoulders Display", "Arial Narrow", sans-serif;
+    --body: "Barlow", "Helvetica Neue", Arial, sans-serif;
+    --cut: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.45;
+    min-height: 100vh;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  input, select { font-family: inherit; }
+  button:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ---------- header ---------- */
+  .hud {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--panel);
+    border-bottom: 1px solid var(--edge);
+  }
+  .hud-inner {
+    max-width: 1060px;
+    margin: 0 auto;
+    padding: 12px 16px 10px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px 22px;
+  }
+  .logo { display: flex; flex-direction: column; line-height: 1; }
+  .logo .title {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 30px;
+    letter-spacing: 0.03em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  .logo .sub {
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+  .hud-char { display: flex; flex-direction: column; min-width: 130px; }
+  .hud-char .who {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .hud-char .what {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .vitals { display: flex; flex-direction: column; gap: 4px; flex: 1 1 220px; max-width: 340px; }
+  .vital { display: grid; grid-template-columns: 52px 1fr 58px; align-items: center; gap: 8px; }
+  .vital .vlabel {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .vital .vnum {
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+    color: var(--ink);
+    text-align: right;
+  }
+  .bar {
+    height: 8px;
+    background: var(--ground);
+    border: 1px solid var(--edge);
+    position: relative;
+    overflow: hidden;
+  }
+  .bar > span { display: block; height: 100%; transition: width 0.25s ease; }
+  .bar.hp > span { background: var(--hp); }
+  .bar.shield > span { background: var(--shield); }
+  .bar.armor > span { background: var(--armor); }
+  .tokens {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--ground);
+    border: 1px solid var(--edge);
+    padding: 6px 10px;
+    clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  }
+  .tokens .tlabel {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .tokens .tcount {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 26px;
+    min-width: 34px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .hazard {
+    height: 8px;
+    background: repeating-linear-gradient(-45deg, var(--accent) 0 12px, #221c10 12px 24px);
+    opacity: 0.85;
+  }
+
+  /* ---------- tabs ---------- */
+  .tabs {
+    max-width: 1060px;
+    margin: 18px auto 0;
+    padding: 0 16px;
+    display: flex;
+    gap: 8px;
+  }
+  .tab {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--panel);
+    border: 1px solid var(--edge);
+    border-bottom: none;
+    padding: 8px 22px 6px;
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+  }
+  .tab[aria-selected="true"] {
+    color: var(--accent-ink);
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  main {
+    max-width: 1060px;
+    margin: 0 auto 60px;
+    padding: 0 16px;
+  }
+  .pane { display: none; padding-top: 16px; }
+  .pane.active { display: block; }
+
+  /* ---------- panels ---------- */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--edge);
+    padding: 16px;
+    clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
+  }
+  .panel h2 {
+    margin: 0 0 12px;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    text-wrap: balance;
+  }
+  .hint { color: var(--muted); font-size: 12px; margin: 4px 0 0; }
+
+  /* ---------- dice pane ---------- */
+  .dice-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 4fr); gap: 16px; align-items: start; }
+  @media (max-width: 800px) { .dice-grid { grid-template-columns: 1fr; } }
+  .steppers { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 14px; }
+  .stepper { display: flex; flex-direction: column; gap: 4px; }
+  .stepper .slabel {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .stepper .controls { display: flex; align-items: center; gap: 0; }
+  .stepbtn {
+    width: 34px;
+    height: 34px;
+    background: var(--panel-2);
+    border: 1px solid var(--edge);
+    color: var(--ink);
+    font-size: 17px;
+    line-height: 1;
+  }
+  .stepbtn:hover { background: var(--edge); }
+  .stepval {
+    min-width: 52px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ground);
+    border-top: 1px solid var(--edge);
+    border-bottom: 1px solid var(--edge);
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 20px;
+    font-variant-numeric: tabular-nums;
+  }
+  .die-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
+  .die {
+    background: var(--panel-2);
+    border: 1px solid var(--edge);
+    color: var(--ink);
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 24px;
+    letter-spacing: 0.04em;
+    padding: 12px 0 10px;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  }
+  .die:hover { background: var(--edge); }
+  .die.d20 { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .die.d20:hover { background: #ffcb3d; }
+  .checks { margin-top: 18px; }
+  .checks h3, .gun-list-head h3 {
+    margin: 0 0 8px;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .check-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .checkbtn {
+    background: var(--ground);
+    border: 1px solid var(--edge);
+    color: var(--ink);
+    padding: 8px 14px;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .checkbtn:hover { border-color: var(--accent); color: var(--accent); }
+  .checkbtn .cmod { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* ---------- roll log ---------- */
+  .log-head { display: flex; align-items: baseline; justify-content: space-between; }
+  .ghostbtn {
+    background: none;
+    border: 1px solid var(--edge);
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+  }
+  .ghostbtn:hover { color: var(--ink); border-color: var(--muted); }
+  .log { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; max-height: 520px; overflow-y: auto; }
+  .log li {
+    display: grid;
+    grid-template-columns: 74px 1fr;
+    gap: 12px;
+    align-items: center;
+    background: var(--ground);
+    border: 1px solid var(--edge);
+    padding: 8px 12px;
+  }
+  .log .total {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 38px;
+    line-height: 1;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .log li.nat20 { border-color: var(--accent); }
+  .log li.nat20 .total { color: var(--accent); }
+  .log li.nat1 { border-color: var(--crit); }
+  .log li.nat1 .total { color: var(--crit); }
+  .log .what { font-weight: 600; font-size: 13px; }
+  .log .detail { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+  .log .flag {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    margin-left: 6px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 700;
+  }
+  .log .flag.bad { background: var(--crit); color: #fff; }
+  .log-empty { color: var(--muted); font-size: 13px; margin: 12px 0 0; }
+
+  /* ---------- guns ---------- */
+  .gun-list-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .primarybtn {
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    color: var(--accent-ink);
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 8px 18px 6px;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  }
+  .primarybtn:hover { background: #ffcb3d; }
+  .gun-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .gun { border-left: 4px solid var(--rarity, var(--muted)); display: flex; flex-direction: column; gap: 10px; }
+  .gun .gname {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 24px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    line-height: 1.05;
+  }
+  .gun .gmeta { color: var(--muted); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .gun .gtags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border: 1px solid var(--edge);
+    color: var(--ink);
+    background: var(--ground);
+  }
+  .chip.element { border-color: var(--el, var(--edge)); color: var(--el, var(--ink)); }
+  .acc-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .acc-table th {
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+    padding: 2px 6px;
+    border-bottom: 1px solid var(--edge);
+  }
+  .acc-table td { padding: 3px 6px; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--panel-2); }
+  .acc-table .crits { color: var(--crit); font-weight: 600; }
+  .gun-actions { display: flex; gap: 8px; align-items: center; margin-top: auto; }
+  .attackbtn {
+    flex: 1;
+    background: var(--crit);
+    border: 1px solid var(--crit);
+    color: #fff;
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 8px 0 6px;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  }
+  .attackbtn:hover { background: #ff8248; }
+  .gun-result {
+    background: var(--ground);
+    border: 1px solid var(--edge);
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  .gun-result .rline { font-weight: 700; }
+  .gun-result .rdetail { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .gun-empty { color: var(--muted); font-size: 14px; }
+
+  /* ---------- forms ---------- */
+  .gunform { margin-bottom: 16px; }
+  .formgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 12px; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .field input, .field select {
+    background: var(--ground);
+    border: 1px solid var(--edge);
+    color: var(--ink);
+    padding: 7px 9px;
+    font-size: 14px;
+  }
+  .tier-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+  .tier {
+    background: var(--ground);
+    border: 1px solid var(--edge);
+    padding: 8px 10px;
+  }
+  .tier .trange {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+  }
+  .tier .trow { display: flex; gap: 8px; margin-top: 6px; }
+  .tier .trow .field { flex: 1; }
+  .form-actions { display: flex; gap: 8px; margin-top: 14px; }
+  @media (max-width: 640px) { .tier-grid { grid-template-columns: 1fr; } }
+
+  /* ---------- character ---------- */
+  .char-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; align-items: start; }
+  .statrow { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--panel-2); }
+  .statrow:last-child { border-bottom: none; }
+  .statrow .sname { font-weight: 600; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .statrow .sdesc { color: var(--muted); font-size: 11px; display: block; text-transform: none; letter-spacing: 0; font-weight: 400; }
+  .pooltable { display: flex; flex-direction: column; gap: 10px; }
+  .pool { display: grid; grid-template-columns: 58px 1fr; gap: 10px; align-items: center; }
+  .pool .plabel { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+  .pool .pcontrols { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .pool .sep { color: var(--muted); }
+</style>
+</head>
+<body>
+<header class="hud">
+  <div class="hud-inner">
+    <div class="logo">
+      <span class="title">ECHO Deck</span>
+      <span class="sub">Bunkers &amp; Badasses</span>
+    </div>
+    <div class="hud-char">
+      <span class="who" id="hud-name">Vault Hunter</span>
+      <span class="what" id="hud-class">—</span>
+    </div>
+    <div class="vitals">
+      <div class="vital">
+        <span class="vlabel">Shield</span>
+        <div class="bar shield"><span id="bar-shield"></span></div>
+        <span class="vnum" id="num-shield">0 / 0</span>
+      </div>
+      <div class="vital">
+        <span class="vlabel">Health</span>
+        <div class="bar hp"><span id="bar-hp"></span></div>
+        <span class="vnum" id="num-hp">0 / 0</span>
+      </div>
+      <div class="vital">
+        <span class="vlabel">Armor</span>
+        <div class="bar armor"><span id="bar-armor"></span></div>
+        <span class="vnum" id="num-armor">0 / 0</span>
+      </div>
+    </div>
+    <div class="tokens">
+      <span class="tlabel">Badass<br>Tokens</span>
+      <button class="stepbtn" id="token-minus" aria-label="Spend a badass token">&minus;</button>
+      <span class="tcount" id="token-count">0</span>
+      <button class="stepbtn" id="token-plus" aria-label="Gain a badass token">+</button>
+    </div>
+  </div>
+  <div class="hazard"></div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Sections">
+  <button class="tab" role="tab" aria-selected="true" data-pane="dice">Dice</button>
+  <button class="tab" role="tab" aria-selected="false" data-pane="guns">Guns</button>
+  <button class="tab" role="tab" aria-selected="false" data-pane="character">Character</button>
+</nav>
+
+<main>
+  <!-- ============ DICE ============ -->
+  <section class="pane active" id="pane-dice">
+    <div class="dice-grid">
+      <div class="panel">
+        <h2>Roll dice</h2>
+        <div class="steppers">
+          <div class="stepper">
+            <span class="slabel">Dice</span>
+            <div class="controls">
+              <button class="stepbtn" data-step="qty" data-dir="-1" aria-label="Fewer dice">&minus;</button>
+              <span class="stepval" id="qty-val">1</span>
+              <button class="stepbtn" data-step="qty" data-dir="1" aria-label="More dice">+</button>
+            </div>
+          </div>
+          <div class="stepper">
+            <span class="slabel">Modifier</span>
+            <div class="controls">
+              <button class="stepbtn" data-step="mod" data-dir="-1" aria-label="Lower modifier">&minus;</button>
+              <span class="stepval" id="mod-val">+0</span>
+              <button class="stepbtn" data-step="mod" data-dir="1" aria-label="Raise modifier">+</button>
+            </div>
+          </div>
+        </div>
+        <div class="die-row">
+          <button class="die" data-die="4">d4</button>
+          <button class="die" data-die="6">d6</button>
+          <button class="die" data-die="8">d8</button>
+          <button class="die" data-die="10">d10</button>
+          <button class="die" data-die="12">d12</button>
+          <button class="die d20" data-die="20">d20</button>
+          <button class="die" data-die="100">d100</button>
+        </div>
+        <div class="checks">
+          <h3>Skill checks &middot; d20 + your stat mod</h3>
+          <div class="check-row" id="check-row"></div>
+          <p class="hint">Set your stat mods on the Character tab. Melee uses your DMG mod.</p>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="log-head">
+          <h2>Roll log</h2>
+          <button class="ghostbtn" id="clear-log">Clear</button>
+        </div>
+        <ul class="log" id="log"></ul>
+        <p class="log-empty" id="log-empty">Nothing rolled yet. Squeeze the trigger.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GUNS ============ -->
+  <section class="pane" id="pane-guns">
+    <div class="panel gunform" id="gunform-panel" hidden>
+      <h2 id="gunform-title">Add a gun</h2>
+      <form id="gunform">
+        <input type="hidden" id="g-id">
+        <div class="formgrid">
+          <div class="field" style="grid-column: 1 / -1;">
+            <label for="g-name">Name</label>
+            <input id="g-name" required maxlength="60" placeholder="e.g. Hailstorm">
+          </div>
+          <div class="field">
+            <label for="g-type">Type</label>
+            <select id="g-type">
+              <option>Pistol</option><option>SMG</option><option>Shotgun</option>
+              <option>Combat Rifle</option><option>Sniper Rifle</option><option>Rocket Launcher</option>
+              <option>Melee Weapon</option><option>Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="g-mfr">Manufacturer</label>
+            <input id="g-mfr" maxlength="30" placeholder="e.g. Dahlia">
+          </div>
+          <div class="field">
+            <label for="g-rarity">Rarity</label>
+            <select id="g-rarity">
+              <option>Common</option><option>Uncommon</option><option>Rare</option>
+              <option>Epic</option><option>Legendary</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="g-level">Level</label>
+            <input id="g-level" type="number" min="1" max="30" value="1">
+          </div>
+          <div class="field">
+            <label for="g-range">Range</label>
+            <input id="g-range" type="number" min="0" max="20" value="5">
+          </div>
+          <div class="field">
+            <label for="g-element">Element</label>
+            <select id="g-element">
+              <option>None</option><option>Incendiary</option><option>Shock</option>
+              <option>Corrosive</option><option>Radiation</option><option>Cryo</option><option>Explosive</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="g-dmg">Damage per hit</label>
+            <input id="g-dmg" value="1d6" required pattern="\s*\d{1,2}[dD]\d{1,3}\s*([+\-]\s*\d{1,3})?\s*" title="Dice like 2d6 or 1d8+2">
+          </div>
+          <div class="field">
+            <label for="g-crit">Bonus per crit</label>
+            <input id="g-crit" value="1d8" required pattern="\s*\d{1,2}[dD]\d{1,3}\s*([+\-]\s*\d{1,3})?\s*" title="Dice like 1d8 or 2d10+1">
+          </div>
+        </div>
+        <div class="tier-grid">
+          <div class="tier">
+            <span class="trange">2&ndash;7</span>
+            <div class="trow">
+              <div class="field"><label for="g-low-hits">Hits</label><input id="g-low-hits" type="number" min="0" max="9" value="1"></div>
+              <div class="field"><label for="g-low-crits">Crits</label><input id="g-low-crits" type="number" min="0" max="9" value="0"></div>
+            </div>
+          </div>
+          <div class="tier">
+            <span class="trange">8&ndash;15</span>
+            <div class="trow">
+              <div class="field"><label for="g-mid-hits">Hits</label><input id="g-mid-hits" type="number" min="0" max="9" value="2"></div>
+              <div class="field"><label for="g-mid-crits">Crits</label><input id="g-mid-crits" type="number" min="0" max="9" value="0"></div>
+            </div>
+          </div>
+          <div class="tier">
+            <span class="trange">16+</span>
+            <div class="trow">
+              <div class="field"><label for="g-high-hits">Hits</label><input id="g-high-hits" type="number" min="0" max="9" value="2"></div>
+              <div class="field"><label for="g-high-crits">Crits</label><input id="g-high-crits" type="number" min="0" max="9" value="1"></div>
+            </div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="primarybtn" id="gunform-save">Save gun</button>
+          <button type="button" class="ghostbtn" id="gunform-cancel">Cancel</button>
+        </div>
+      </form>
+    </div>
+    <div class="gun-list-head">
+      <h3>Your arsenal &middot; attack rolls d20 + ACC mod against the gun's accuracy bar</h3>
+      <button class="primarybtn" id="add-gun">+ Add gun</button>
+    </div>
+    <div class="gun-grid" id="gun-grid"></div>
+    <p class="gun-empty" id="gun-empty">No guns yet. A vault hunter without a gun is just a tourist &mdash; add one.</p>
+  </section>
+
+  <!-- ============ CHARACTER ============ -->
+  <section class="pane" id="pane-character">
+    <div class="char-grid">
+      <div class="panel">
+        <h2>Identity</h2>
+        <div class="formgrid">
+          <div class="field" style="grid-column: 1 / -1;">
+            <label for="c-name">Name</label>
+            <input id="c-name" maxlength="40" placeholder="Vault Hunter">
+          </div>
+          <div class="field">
+            <label for="c-class">Class / Archetype</label>
+            <input id="c-class" maxlength="40" placeholder="e.g. Gunner">
+          </div>
+          <div class="field">
+            <label for="c-level">Level</label>
+            <input id="c-level" type="number" min="1" max="30" value="1">
+          </div>
+          <div class="field">
+            <label for="c-gold">Gold</label>
+            <input id="c-gold" type="number" min="0" value="0">
+          </div>
+          <div class="field">
+            <label for="c-xp">XP</label>
+            <input id="c-xp" type="number" min="0" value="0">
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Stat mods</h2>
+        <div id="stat-rows"></div>
+        <p class="hint">Enter the modifier your sheet gives you for each stat. These feed the skill-check and attack buttons.</p>
+      </div>
+      <div class="panel">
+        <h2>Vitals</h2>
+        <div class="pooltable" id="pool-rows"></div>
+        <p class="hint">Use the steppers mid-fight; the header bars follow along. Damage shields first, like the game intends.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORE_KEY = "bnb-echo-deck-v1";
+
+  var ELEMENT_COLORS = {
+    "Incendiary": "#ff6a2a",
+    "Shock": "#4db8ff",
+    "Corrosive": "#8fd42a",
+    "Radiation": "#e8e337",
+    "Cryo": "#a8e6ff",
+    "Explosive": "#f0d040"
+  };
+  var RARITY_COLORS = {
+    "Common": "#9b8fa3",
+    "Uncommon": "#8fd42a",
+    "Rare": "#4db8ff",
+    "Epic": "#c86bff",
+    "Legendary": "#f5b81c"
+  };
+  var STATS = [
+    { key: "acc", name: "ACC", desc: "Accuracy — gun attacks, precision" },
+    { key: "dmg", name: "DMG", desc: "Damage — melee, brute force" },
+    { key: "spd", name: "SPD", desc: "Speed — initiative, sneaking, reflexes" },
+    { key: "mst", name: "MST", desc: "Mastery — talents, know-how" }
+  ];
+  var POOLS = [
+    { key: "shield", name: "Shield" },
+    { key: "hp", name: "Health" },
+    { key: "armor", name: "Armor" }
+  ];
+
+  function defaultState() {
+    return {
+      character: {
+        name: "", cls: "", level: 1, gold: 0, xp: 0, badass: 3,
+        mods: { acc: 0, dmg: 0, spd: 0, mst: 0 },
+        pools: {
+          shield: { cur: 10, max: 10 },
+          hp: { cur: 20, max: 20 },
+          armor: { cur: 0, max: 0 }
+        }
+      },
+      guns: [{
+        id: "starter-1",
+        name: "Rustknuckle",
+        type: "Pistol",
+        mfr: "Scrapyard",
+        rarity: "Common",
+        level: 1,
+        range: 5,
+        element: "None",
+        dmg: "1d6",
+        crit: "1d8",
+        tiers: {
+          low: { hits: 1, crits: 0 },
+          mid: { hits: 2, crits: 0 },
+          high: { hits: 2, crits: 1 }
+        }
+      }],
+      log: [],
+      qty: 1,
+      mod: 0
+    };
+  }
+
+  var state = load();
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && parsed.character && parsed.character.pools) return parsed;
+      }
+    } catch (e) { /* private mode or corrupt data — start fresh */ }
+    return defaultState();
+  }
+  function save() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+  }
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function clamp(n, lo, hi) { return Math.min(hi, Math.max(lo, n)); }
+  function int(v, fallback) {
+    var n = parseInt(v, 10);
+    return isNaN(n) ? fallback : n;
+  }
+  function signed(n) { return (n >= 0 ? "+" : "") + n; }
+
+  /* ---------- dice ---------- */
+  function rollDie(sides) { return 1 + Math.floor(Math.random() * sides); }
+
+  // Parse "2d6+1" → { count, sides, bonus } or null.
+  function parseDice(spec) {
+    var m = /^\s*(\d{1,2})[dD](\d{1,3})\s*(?:([+-])\s*(\d{1,3}))?\s*$/.exec(spec || "");
+    if (!m) return null;
+    var count = clamp(int(m[1], 1), 1, 20);
+    var sides = clamp(int(m[2], 6), 2, 1000);
+    var bonus = m[3] ? int(m[4], 0) * (m[3] === "-" ? -1 : 1) : 0;
+    return { count: count, sides: sides, bonus: bonus };
+  }
+  function rollSpec(spec) {
+    var p = parseDice(spec);
+    if (!p) return { total: 0, text: "?" };
+    var rolls = [];
+    for (var i = 0; i < p.count; i++) rolls.push(rollDie(p.sides));
+    var total = rolls.reduce(function (a, b) { return a + b; }, 0) + p.bonus;
+    var text = rolls.join(" + ") + (p.bonus ? " " + (p.bonus > 0 ? "+" : "−") + " " + Math.abs(p.bonus) : "");
+    return { total: total, text: text };
+  }
+
+  function addLog(entry) {
+    state.log.unshift(entry);
+    if (state.log.length > 60) state.log.length = 60;
+    save();
+    renderLog();
+  }
+
+  function rollBasic(sides) {
+    var qty = state.qty, mod = state.mod;
+    var rolls = [];
+    for (var i = 0; i < qty; i++) rolls.push(rollDie(sides));
+    var sum = rolls.reduce(function (a, b) { return a + b; }, 0);
+    var total = sum + mod;
+    var entry = {
+      total: total,
+      what: qty + "d" + sides + (mod ? " " + signed(mod) : ""),
+      detail: "[" + rolls.join(", ") + "]" + (mod ? " " + signed(mod) : ""),
+      flag: null
+    };
+    if (sides === 20 && qty === 1) {
+      if (rolls[0] === 20) entry.flag = "nat 20";
+      if (rolls[0] === 1) entry.flag = "nat 1";
+    }
+    addLog(entry);
+  }
+
+  function rollCheck(statKey, label) {
+    var mod = statKey === "flat" ? 0 : state.character.mods[statKey];
+    var die = rollDie(20);
+    var entry = {
+      total: die + mod,
+      what: label + " check (d20 " + signed(mod) + ")",
+      detail: "rolled " + die + " " + signed(mod),
+      flag: die === 20 ? "nat 20" : die === 1 ? "nat 1" : null
+    };
+    addLog(entry);
+  }
+
+  /* ---------- attack resolution ---------- */
+  function attack(gun) {
+    var accMod = state.character.mods.acc;
+    var die = rollDie(20);
+    var total = die + accMod;
+    var result;
+
+    if (die === 1) {
+      result = {
+        headline: "JAM! Natural 1 — the shot goes wide.",
+        detail: "Accuracy roll: 1 " + signed(accMod) + " = " + total,
+        total: total, flag: "nat 1"
+      };
+    } else {
+      var tier = total >= 16 ? gun.tiers.high : total >= 8 ? gun.tiers.mid : total >= 2 ? gun.tiers.low : null;
+      var hits = tier ? int(tier.hits, 0) : 0;
+      var crits = tier ? int(tier.crits, 0) : 0;
+      var badass = die === 20;
+      if (badass) crits += 1;
+
+      if (hits + crits === 0) {
+        result = {
+          headline: "Miss — no hits on that band.",
+          detail: "Accuracy roll: " + die + " " + signed(accMod) + " = " + total,
+          total: total, flag: badass ? "nat 20" : null
+        };
+      } else {
+        var dmgTotal = 0, parts = [];
+        for (var h = 0; h < hits; h++) {
+          var r = rollSpec(gun.dmg);
+          dmgTotal += r.total;
+          parts.push("hit " + gun.dmg + ": " + r.text + " = " + r.total);
+        }
+        for (var c = 0; c < crits; c++) {
+          var rc = rollSpec(gun.crit);
+          dmgTotal += rc.total;
+          parts.push("crit " + gun.crit + ": " + rc.text + " = " + rc.total);
+        }
+        var el = gun.element && gun.element !== "None" ? " " + gun.element.toLowerCase() : "";
+        result = {
+          headline: dmgTotal + el + " damage — " + hits + " hit" + (hits === 1 ? "" : "s") +
+            (crits ? ", " + crits + " crit" + (crits === 1 ? "" : "s") : "") +
+            (badass ? " (BADASS!)" : ""),
+          detail: "Accuracy roll: " + die + " " + signed(accMod) + " = " + total + " · " + parts.join(" · "),
+          total: total, flag: badass ? "nat 20" : null
+        };
+      }
+    }
+
+    gun.lastResult = result;
+    addLog({
+      total: result.total,
+      what: gun.name + " — attack",
+      detail: result.headline + " · " + result.detail,
+      flag: result.flag
+    });
+    renderGuns();
+  }
+
+  /* ---------- rendering ---------- */
+  function renderHud() {
+    var c = state.character;
+    $("hud-name").textContent = c.name || "Vault Hunter";
+    $("hud-class").textContent = (c.cls || "Unclassed") + " · LV " + c.level;
+    $("token-count").textContent = c.badass;
+    POOLS.forEach(function (p) {
+      var pool = c.pools[p.key];
+      var pct = pool.max > 0 ? clamp(Math.round(100 * pool.cur / pool.max), 0, 100) : 0;
+      $("bar-" + p.key).style.width = pct + "%";
+      $("num-" + p.key).textContent = pool.cur + " / " + pool.max;
+    });
+  }
+
+  function renderLog() {
+    var ul = $("log");
+    ul.innerHTML = state.log.map(function (e) {
+      var cls = e.flag === "nat 20" ? "nat20" : e.flag === "nat 1" ? "nat1" : "";
+      var flag = e.flag === "nat 20" ? '<span class="flag">Badass</span>'
+               : e.flag === "nat 1" ? '<span class="flag bad">Nat 1</span>' : "";
+      return '<li class="' + cls + '">' +
+        '<span class="total">' + e.total + "</span>" +
+        "<span><span class=\"what\">" + esc(e.what) + "</span>" + flag +
+        '<br><span class="detail">' + esc(e.detail) + "</span></span></li>";
+    }).join("");
+    $("log-empty").hidden = state.log.length > 0;
+  }
+
+  function renderSteppers() {
+    $("qty-val").textContent = state.qty;
+    $("mod-val").textContent = signed(state.mod);
+  }
+
+  function renderChecks() {
+    var row = $("check-row");
+    row.innerHTML = STATS.map(function (s) {
+      return '<button class="checkbtn" data-check="' + s.key + '">' + s.name +
+        ' <span class="cmod">' + signed(state.character.mods[s.key]) + "</span></button>";
+    }).join("") +
+      '<button class="checkbtn" data-check="melee">Melee <span class="cmod">' +
+      signed(state.character.mods.dmg) + "</span></button>";
+  }
+
+  function renderGuns() {
+    var grid = $("gun-grid");
+    grid.innerHTML = state.guns.map(function (g) {
+      var rarity = RARITY_COLORS[g.rarity] || "var(--muted)";
+      var elColor = ELEMENT_COLORS[g.element];
+      var elChip = g.element && g.element !== "None"
+        ? '<span class="chip element" style="--el:' + elColor + '">' + esc(g.element) + "</span>" : "";
+      var last = g.lastResult
+        ? '<div class="gun-result"><div class="rline">' + esc(g.lastResult.headline) +
+          '</div><div class="rdetail">' + esc(g.lastResult.detail) + "</div></div>"
+        : "";
+      return '<div class="panel gun" style="--rarity:' + rarity + '">' +
+        '<div><div class="gname">' + esc(g.name) + "</div>" +
+        '<div class="gmeta">' + esc(g.rarity) + " " + esc(g.type) +
+        (g.mfr ? " · " + esc(g.mfr) : "") + " · LV " + int(g.level, 1) + "</div></div>" +
+        '<div class="gtags">' + elChip +
+        '<span class="chip">Range ' + int(g.range, 0) + "</span>" +
+        '<span class="chip">Dmg ' + esc(g.dmg) + "/hit</span>" +
+        '<span class="chip">Crit +' + esc(g.crit) + "</span></div>" +
+        '<table class="acc-table"><tr><th>Roll</th><th>2–7</th><th>8–15</th><th>16+</th></tr>' +
+        "<tr><td>Hits</td><td>" + int(g.tiers.low.hits, 0) + "</td><td>" + int(g.tiers.mid.hits, 0) +
+        "</td><td>" + int(g.tiers.high.hits, 0) + "</td></tr>" +
+        '<tr><td>Crits</td><td class="crits">' + int(g.tiers.low.crits, 0) + '</td><td class="crits">' +
+        int(g.tiers.mid.crits, 0) + '</td><td class="crits">' + int(g.tiers.high.crits, 0) + "</td></tr></table>" +
+        last +
+        '<div class="gun-actions">' +
+        '<button class="attackbtn" data-attack="' + esc(g.id) + '">Attack</button>' +
+        '<button class="ghostbtn" data-edit="' + esc(g.id) + '">Edit</button>' +
+        '<button class="ghostbtn" data-del="' + esc(g.id) + '">Scrap</button>' +
+        "</div></div>";
+    }).join("");
+    $("gun-empty").hidden = state.guns.length > 0;
+  }
+
+  function renderStats() {
+    var box = $("stat-rows");
+    box.innerHTML = STATS.map(function (s) {
+      return '<div class="statrow"><span class="sname">' + s.name +
+        '<span class="sdesc">' + s.desc + "</span></span>" +
+        '<div class="controls" style="display:flex">' +
+        '<button class="stepbtn" data-statmod="' + s.key + '" data-dir="-1" aria-label="Lower ' + s.name + '">&minus;</button>' +
+        '<span class="stepval" id="statval-' + s.key + '">' + signed(state.character.mods[s.key]) + "</span>" +
+        '<button class="stepbtn" data-statmod="' + s.key + '" data-dir="1" aria-label="Raise ' + s.name + '">+</button>' +
+        "</div></div>";
+    }).join("");
+  }
+
+  function renderPools() {
+    var box = $("pool-rows");
+    box.innerHTML = POOLS.map(function (p) {
+      var pool = state.character.pools[p.key];
+      return '<div class="pool"><span class="plabel">' + p.name + "</span>" +
+        '<div class="pcontrols">' +
+        '<button class="stepbtn" data-pool="' + p.key + '" data-part="cur" data-dir="-1" aria-label="Lose ' + p.name + '">&minus;</button>' +
+        '<span class="stepval" id="poolcur-' + p.key + '">' + pool.cur + "</span>" +
+        '<button class="stepbtn" data-pool="' + p.key + '" data-part="cur" data-dir="1" aria-label="Recover ' + p.name + '">+</button>' +
+        '<span class="sep">of max</span>' +
+        '<button class="stepbtn" data-pool="' + p.key + '" data-part="max" data-dir="-1" aria-label="Lower max ' + p.name + '">&minus;</button>' +
+        '<span class="stepval" id="poolmax-' + p.key + '">' + pool.max + "</span>" +
+        '<button class="stepbtn" data-pool="' + p.key + '" data-part="max" data-dir="1" aria-label="Raise max ' + p.name + '">+</button>' +
+        "</div></div>";
+    }).join("");
+  }
+
+  function renderIdentity() {
+    var c = state.character;
+    $("c-name").value = c.name;
+    $("c-class").value = c.cls;
+    $("c-level").value = c.level;
+    $("c-gold").value = c.gold;
+    $("c-xp").value = c.xp;
+  }
+
+  function renderAll() {
+    renderHud(); renderLog(); renderSteppers(); renderChecks();
+    renderGuns(); renderStats(); renderPools(); renderIdentity();
+  }
+
+  /* ---------- gun form ---------- */
+  function openGunForm(gun) {
+    $("gunform-panel").hidden = false;
+    $("gunform-title").textContent = gun ? "Edit gun" : "Add a gun";
+    $("g-id").value = gun ? gun.id : "";
+    $("g-name").value = gun ? gun.name : "";
+    $("g-type").value = gun ? gun.type : "Pistol";
+    $("g-mfr").value = gun ? gun.mfr : "";
+    $("g-rarity").value = gun ? gun.rarity : "Common";
+    $("g-level").value = gun ? gun.level : 1;
+    $("g-range").value = gun ? gun.range : 5;
+    $("g-element").value = gun ? gun.element : "None";
+    $("g-dmg").value = gun ? gun.dmg : "1d6";
+    $("g-crit").value = gun ? gun.crit : "1d8";
+    ["low", "mid", "high"].forEach(function (t) {
+      $("g-" + t + "-hits").value = gun ? gun.tiers[t].hits : { low: 1, mid: 2, high: 2 }[t];
+      $("g-" + t + "-crits").value = gun ? gun.tiers[t].crits : { low: 0, mid: 0, high: 1 }[t];
+    });
+    $("g-name").focus();
+  }
+  function closeGunForm() { $("gunform-panel").hidden = true; }
+
+  $("gunform").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    if (!parseDice($("g-dmg").value) || !parseDice($("g-crit").value)) return;
+    var id = $("g-id").value || "gun-" + Date.now() + "-" + Math.floor(Math.random() * 1e6);
+    var gun = {
+      id: id,
+      name: $("g-name").value.trim() || "Unnamed gun",
+      type: $("g-type").value,
+      mfr: $("g-mfr").value.trim(),
+      rarity: $("g-rarity").value,
+      level: clamp(int($("g-level").value, 1), 1, 30),
+      range: clamp(int($("g-range").value, 0), 0, 20),
+      element: $("g-element").value,
+      dmg: $("g-dmg").value.trim().toLowerCase(),
+      crit: $("g-crit").value.trim().toLowerCase(),
+      tiers: {
+        low: { hits: clamp(int($("g-low-hits").value, 0), 0, 9), crits: clamp(int($("g-low-crits").value, 0), 0, 9) },
+        mid: { hits: clamp(int($("g-mid-hits").value, 0), 0, 9), crits: clamp(int($("g-mid-crits").value, 0), 0, 9) },
+        high: { hits: clamp(int($("g-high-hits").value, 0), 0, 9), crits: clamp(int($("g-high-crits").value, 0), 0, 9) }
+      }
+    };
+    var idx = state.guns.findIndex(function (g) { return g.id === id; });
+    if (idx >= 0) { gun.lastResult = state.guns[idx].lastResult; state.guns[idx] = gun; }
+    else state.guns.push(gun);
+    save();
+    closeGunForm();
+    renderGuns();
+  });
+  $("gunform-cancel").addEventListener("click", closeGunForm);
+  $("add-gun").addEventListener("click", function () { openGunForm(null); });
+
+  /* ---------- global click handling ---------- */
+  document.addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button");
+    if (!btn) return;
+
+    if (btn.dataset.pane) {
+      document.querySelectorAll(".tab").forEach(function (t) {
+        t.setAttribute("aria-selected", String(t === btn));
+      });
+      document.querySelectorAll(".pane").forEach(function (p) {
+        p.classList.toggle("active", p.id === "pane-" + btn.dataset.pane);
+      });
+      return;
+    }
+    if (btn.dataset.die) { rollBasic(int(btn.dataset.die, 20)); return; }
+    if (btn.dataset.check) {
+      var key = btn.dataset.check;
+      if (key === "melee") rollCheck("dmg", "Melee");
+      else {
+        var stat = STATS.find(function (s) { return s.key === key; });
+        rollCheck(key, stat ? stat.name : key.toUpperCase());
+      }
+      return;
+    }
+    if (btn.dataset.step) {
+      var dir = int(btn.dataset.dir, 1);
+      if (btn.dataset.step === "qty") state.qty = clamp(state.qty + dir, 1, 20);
+      else state.mod = clamp(state.mod + dir, -20, 30);
+      save(); renderSteppers();
+      return;
+    }
+    if (btn.id === "token-plus" || btn.id === "token-minus") {
+      var d = btn.id === "token-plus" ? 1 : -1;
+      state.character.badass = clamp(state.character.badass + d, 0, 99);
+      save(); renderHud();
+      return;
+    }
+    if (btn.id === "clear-log") { state.log = []; save(); renderLog(); return; }
+    if (btn.dataset.attack) {
+      var gunA = state.guns.find(function (g) { return g.id === btn.dataset.attack; });
+      if (gunA) attack(gunA);
+      return;
+    }
+    if (btn.dataset.edit) {
+      var gunE = state.guns.find(function (g) { return g.id === btn.dataset.edit; });
+      if (gunE) openGunForm(gunE);
+      return;
+    }
+    if (btn.dataset.del) {
+      var gunD = state.guns.find(function (g) { return g.id === btn.dataset.del; });
+      if (gunD && confirm("Scrap " + gunD.name + "? This can't be undone.")) {
+        state.guns = state.guns.filter(function (g) { return g.id !== btn.dataset.del; });
+        save(); renderGuns();
+      }
+      return;
+    }
+    if (btn.dataset.statmod) {
+      var mods = state.character.mods;
+      mods[btn.dataset.statmod] = clamp(mods[btn.dataset.statmod] + int(btn.dataset.dir, 1), -5, 15);
+      save();
+      $("statval-" + btn.dataset.statmod).textContent = signed(mods[btn.dataset.statmod]);
+      renderChecks();
+      return;
+    }
+    if (btn.dataset.pool) {
+      var pool = state.character.pools[btn.dataset.pool];
+      var dirP = int(btn.dataset.dir, 1);
+      if (btn.dataset.part === "max") {
+        pool.max = clamp(pool.max + dirP, 0, 999);
+        pool.cur = Math.min(pool.cur, pool.max);
+      } else {
+        pool.cur = clamp(pool.cur + dirP, 0, pool.max);
+      }
+      save();
+      $("poolcur-" + btn.dataset.pool).textContent = pool.cur;
+      $("poolmax-" + btn.dataset.pool).textContent = pool.max;
+      renderHud();
+      return;
+    }
+  });
+
+  /* ---------- identity inputs ---------- */
+  [["c-name", "name"], ["c-class", "cls"]].forEach(function (pair) {
+    $(pair[0]).addEventListener("input", function () {
+      state.character[pair[1]] = this.value;
+      save(); renderHud();
+    });
+  });
+  [["c-level", "level", 1, 30, 1], ["c-gold", "gold", 0, 1e9, 0], ["c-xp", "xp", 0, 1e9, 0]].forEach(function (f) {
+    $(f[0]).addEventListener("input", function () {
+      state.character[f[1]] = clamp(int(this.value, f[4]), f[2], f[3]);
+      save(); renderHud();
+    });
+  });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>

@@ -26,9 +26,13 @@ tabletop RPG). No build step, no server, no dependencies — open
   the log offers **Reroll** (re-rolls the whole thing, attacks included)
   or **+1d6** (boosts the check total, or the damage total on an attack).
   Each costs one token, straight off the header counter.
-- **Character tracker** — name/class/level, stat mods, gold, XP, and
-  shield/health/armor pools with steppers. The sticky header shows your
-  vitals bars and a badass-token counter at all times.
+- **Character sheet** — everything on the official sheet: name, archetype,
+  class, background, level, gold, XP; stat values and mods; badass rank
+  with derived Initiative and Movement; the six checks (Interact, Talk,
+  Insight, Sneak, Search, Traverse) with misc mods and one-tap rolls;
+  melee die; shield (capacity + recharge), health (+ regen), armor, and
+  grenade pools; favored gun, potions, traits, and archetype feat. The
+  sticky header shows vitals bars and badass tokens at all times.
 - **Persistence** — everything saves to your browser's `localStorage`, so
   your character and arsenal survive a refresh.
 
@@ -43,11 +47,18 @@ xdg-open index.html      # Linux
 python3 -m http.server 8000
 ```
 
-## Skill trees — filling in your class data
+## Skill trees & class data
 
-The app ships with no book content, just a template. Open `classes.js`
-and copy the structure for each class you play, straight from the book or
-your character sheet:
+`classes.js` ships with all ten class skill trees (Assassin, Berserker,
+Commando, Gunzerker, Hunter, Mechromancer, Psycho, Siren Lightwalk,
+Siren Phaselock, Soldier), transcribed from the free class sheets
+published by Nerdvana Games — skill names, tiers, ranks, and mechanics
+match the sheets, with condensed wording. Pick a class on the **Skills**
+tab, allocate points, tap a skill to read what it does. Tier thresholds
+default to 5 points per tier (`pointsPerTier` — adjust it if your table
+uses a different unlock rule).
+
+To add homebrew or house-ruled classes, use the same structure:
 
 ```js
 window.BNB_CLASSES = {
@@ -82,7 +93,7 @@ copy and can't edit files, the Skills tab has an **Import class data
 
 ## Testing
 
-`test/exhaustive.js` is a Playwright suite (163 checks) covering every
+`test/exhaustive.js` is a Playwright suite (183 checks) covering every
 control — dice, clamps, gun form validation/edit/scrap, attack bands
 (forced nat 1/nat 20 via a stubbed RNG), loot generation, gear kinds,
 equip syncing, badass-token boosts/rerolls, log capping, persistence,

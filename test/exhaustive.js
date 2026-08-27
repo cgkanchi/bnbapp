@@ -96,18 +96,20 @@ function section(name) { console.log('\n== ' + name + ' =='); }
   check('stat mod clamps at +15', await page.textContent('#statval-dmg') === '+15');
   await page.evaluate(() => { for (let i = 0; i < 10; i++) document.querySelector('button[data-statmod="dmg"][data-dir="-1"]').click(); });
   await tab('dice');
-  check('check button shows ACC +3', (await page.textContent('button[data-check="acc"]')).includes('+3'));
-  check('melee button shows DMG mod +5', (await page.textContent('button[data-check="melee"]')).includes('+5'));
+  check('Interact button shows ACC-based +3', (await page.textContent('button[data-check="interact"]')).includes('+3'));
+  check('melee button shows die + DMG mod', (await page.textContent('button[data-check="melee"]')).includes('1d6 +5'));
   await forceRandom(0.5);
-  await page.click('button[data-check="acc"]');
-  check('ACC check = 11+3', await topTotal() === 14, 'got ' + await topTotal());
-  check('check label names ACC', (await topWhat()).includes('ACC'));
+  await page.click('button[data-check="interact"]');
+  check('Interact check = 11+3', await topTotal() === 14, 'got ' + await topTotal());
+  check('check label names Interact', (await topWhat()).includes('Interact'));
   await page.click('button[data-check="melee"]');
-  check('melee check = 11+5', await topTotal() === 16, 'got ' + await topTotal());
-  for (const s of ['dmg', 'spd', 'mst']) {
+  check('melee damage = 4 (1d6@0.5) + 5', await topTotal() === 9, 'got ' + await topTotal());
+  await page.click('button[data-check="initiative"]');
+  check('initiative check = 11 + BR 1 + SPD 0', await topTotal() === 12, 'got ' + await topTotal());
+  for (const s of ['talk', 'insight', 'sneak', 'search', 'traverse']) {
     const before = await logCount();
     await page.click('button[data-check="' + s + '"]');
-    check(s.toUpperCase() + ' check logs', await logCount() === before + 1);
+    check(s + ' check logs', await logCount() === before + 1);
   }
   await restoreRandom();
 
@@ -250,7 +252,7 @@ function section(name) { console.log('\n== ' + name + ' =='); }
 
   // boost a plain check
   await forceRandom(0.5);
-  await page.click('button[data-check="spd"]');
+  await page.click('button[data-check="talk"]');
   const base = await topTotal();
   await forceRandom(0.9999); // boost d6 = 6
   await page.click('button[data-logact="boost"]');
@@ -319,25 +321,33 @@ function section(name) { console.log('\n== ' + name + ' =='); }
   /* ================= F2. skill trees ================= */
   section('F2. Skill trees');
   await tab('skills');
-  check('class picker lists template class', await page.locator('#class-select option').count() >= 2);
+  check('class picker lists all 10 classes', await page.locator('#class-select option').count() === 11);
   check('empty state before class picked', await page.locator('#skills-body .gun-empty').count() === 1);
-  await page.selectOption('#class-select', 'Example Class (replace me)');
-  check('action skill panel renders', (await page.textContent('#skills-body')).includes('Example Action Skill'));
-  check('both template trees render', await page.locator('.tree').count() === 2);
+  await page.selectOption('#class-select', 'Assassin');
+  check('action skill panel renders', (await page.textContent('#skills-body')).includes('Decepti0n'));
+  check('one tree renders for Assassin', await page.locator('.tree').count() === 1);
+  check('six tiers render', await page.locator('.tier-row').count() === 6);
   check('tier 2 locked at 0 pts', await page.locator('[data-skpt="0|1|0"][data-dir="1"]').isDisabled());
-  const skillOne = page.locator('.skill', { hasText: 'Skill One' });
-  for (let i = 0; i < 5; i++) await skillOne.locator('[data-dir="1"]').click();
-  check('skill one maxed at 5/5', await skillOne.locator('.pval').textContent() === '5/5');
-  check('maxed skill + disabled', await skillOne.locator('[data-dir="1"]').isDisabled());
+  const headshot = page.locator('.skill', { hasText: 'Headshot' });
+  const fastHands = page.locator('.skill', { hasText: 'Fast Hands' });
+  for (let i = 0; i < 3; i++) await headshot.locator('[data-dir="1"]').click();
+  check('Headshot maxed at 3/3', await headshot.locator('.pval').textContent() === '3/3');
+  check('maxed skill + disabled', await headshot.locator('[data-dir="1"]').isDisabled());
+  check('tier 2 still locked at 3 pts', await page.locator('[data-skpt="0|1|0"][data-dir="1"]').isDisabled());
+  for (let i = 0; i < 2; i++) await fastHands.locator('[data-dir="1"]').click();
   check('tier 2 unlocks at 5 pts', !(await page.locator('[data-skpt="0|1|0"][data-dir="1"]').isDisabled()));
   check('tree total shows 5 pts', await page.locator('.tree').first().locator('.tree-pts').textContent() === '5 pts');
-  await skillOne.locator('[data-dir="-1"]').click();
-  check('minus decrements to 4/5', await skillOne.locator('.pval').textContent() === '4/5');
+  const capstone = page.locator('.skill', { hasText: 'Death Blossom' });
+  check('capstone renders with max 1', await capstone.locator('.pval').textContent() === '0/1');
+  check('capstone locked (needs 25 pts)', await capstone.locator('[data-dir="1"]').isDisabled());
+  await headshot.locator('[data-dir="-1"]').click();
+  check('minus decrements to 2/3', await headshot.locator('.pval').textContent() === '2/3');
   check('tier 2 relocks below threshold', await page.locator('[data-skpt="0|1|0"][data-dir="1"]').isDisabled());
-  await skillOne.locator('[data-dir="1"]').click();
-  await skillOne.locator('.skill-name').click();
+  await headshot.locator('[data-dir="1"]').click();
+  await headshot.locator('.skill-name').click();
   check('skill description expands on tap', await page.locator('.skill-desc').count() === 1);
-  await skillOne.locator('.skill-name').click();
+  check('description keeps mechanics', (await page.locator('.skill-desc').textContent()).includes('+2 Crit Damage/SL'));
+  await headshot.locator('.skill-name').click();
   check('skill description collapses', await page.locator('.skill-desc').count() === 0);
   // JSON import path
   await page.click('details summary');
@@ -367,13 +377,39 @@ function section(name) { console.log('\n== ' + name + ' =='); }
   section('H. Identity and vitals');
   await tab('character');
   await page.fill('#c-name', 'Tiny Tina');
+  await page.fill('#c-archetype', 'Deadeye');
   await page.fill('#c-class', 'Demolitionist');
+  await page.fill('#c-background', 'The Blade');
   await page.fill('#c-level', '99');
   check('level clamps to 30', (await getState()).character.level === 30);
   check('header shows name', await page.textContent('#hud-name') === 'Tiny Tina');
-  check('header shows class + level', (await page.textContent('#hud-class')).includes('Demolitionist'));
+  check('header shows archetype + class + level', (await page.textContent('#hud-class')).includes('Deadeye · Demolitionist'));
   await page.fill('#c-gold', '250');
   check('gold saves', (await getState()).character.gold === 250);
+  // sheet fields
+  await page.fill('input[data-statval="mst"]', '4');
+  check('stat value saves', (await getState()).character.stats.mst.val === 4);
+  await page.click('button[data-brank][data-dir="1"]');
+  check('badass rank steps to 2', await page.textContent('#brank-val') === '2');
+  check('initiative total = BR 2 + SPD 0', await page.textContent('#total-initiative') === '+2');
+  await page.fill('input[data-checkmisc="initiative"]', '2');
+  check('initiative misc feeds total', await page.textContent('#total-initiative') === '+4');
+  check('movement total shown', await page.textContent('#total-movement') === '3 sq');
+  await page.fill('input[data-checkmisc="traverse"]', '-2');
+  check('check misc feeds check total', await page.textContent('#chk-total-traverse') === '-2');
+  check('dice tab button reflects misc', (await page.textContent('button[data-check="traverse"]')).includes('-2'));
+  await page.fill('#c-meleedie', '1d8');
+  check('melee die updates total', (await page.textContent('#total-melee')).includes('1d8'));
+  await page.fill('#c-meleedie', '1d6');
+  await page.fill('input[data-poolfield="shield:recharge"]', '5');
+  check('shield recharge saves', (await getState()).character.pools.shield.recharge === 5);
+  await page.evaluate(() => { for (let i = 0; i < 3; i++) document.querySelector('button[data-pool="grenades"][data-part="max"][data-dir="1"]').click(); });
+  await page.evaluate(() => { for (let i = 0; i < 2; i++) document.querySelector('button[data-pool="grenades"][data-part="cur"][data-dir="1"]').click(); });
+  check('grenade pool tracks 2/3', (await getState()).character.pools.grenades.cur === 2 && (await getState()).character.pools.grenades.max === 3);
+  await page.selectOption('#c-favored', 'Sniper Rifle');
+  check('favored gun saves', (await getState()).character.favoredGun === 'Sniper Rifle');
+  await page.fill('#c-feat', 'Line of Sight: +1 Search with Sniper equipped');
+  check('feat text saves', (await getState()).character.feat.includes('Line of Sight'));
   // pool: cur can't exceed max; lowering max drags cur down
   await page.evaluate(() => { for (let i = 0; i < 50; i++) document.querySelector('button[data-pool="hp"][data-part="cur"][data-dir="1"]').click(); });
   const hp1 = (await getState()).character.pools.hp;
@@ -397,9 +433,9 @@ function section(name) { console.log('\n== ' + name + ' =='); }
   check('selected class persists', await page.evaluate(() => document.getElementById('class-select').value) === 'Test Class');
   check('imported class survives reload', await page.locator('.skill', { hasText: 'Solo Skill' }).count() === 1);
   check('imported class points persist', await page.locator('.skill .pval').first().textContent() === '2/2');
-  await page.selectOption('#class-select', 'Example Class (replace me)');
+  await page.selectOption('#class-select', 'Assassin');
   check('per-class allocations kept when switching back',
-    await page.locator('.skill', { hasText: 'Skill One' }).locator('.pval').textContent() === '5/5');
+    await page.locator('.skill', { hasText: 'Headshot' }).locator('.pval').textContent() === '3/3');
 
   /* ================= J. responsive: no horizontal overflow ================= */
   section('J. Responsive layout');

@@ -463,7 +463,7 @@
   @media (max-width: 640px) { .tier-grid { grid-template-columns: 1fr; } }
 
   /* ---------- skill trees ---------- */
-  .tree-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 14px; align-items: start; }
+  .tree-grid { display: grid; grid-template-columns: 1fr; gap: 14px; align-items: start; }
   .tree-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
   .tree-title {
     flex: 1;
@@ -495,6 +495,9 @@
   }
   .tier-tag.locked { color: var(--crit); }
   .tier-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  @media (max-width: 700px) {
+    .tier-slots { grid-template-columns: repeat(2, 1fr) !important; }
+  }
   .skill {
     display: flex;
     flex-direction: column;
@@ -550,6 +553,37 @@
   .statrow:last-child { border-bottom: none; }
   .statrow .sname { font-weight: 600; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; }
   .statrow .sdesc { color: var(--muted); font-size: 11px; display: block; text-transform: none; letter-spacing: 0; font-weight: 400; }
+  .numin {
+    width: 58px;
+    background: var(--ground);
+    border: 1px solid var(--edge);
+    color: var(--ink);
+    padding: 6px 7px;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  .diein { width: 74px; }
+  .statctl { display: flex; align-items: flex-end; gap: 10px 12px; flex-wrap: wrap; justify-content: flex-end; }
+  .dtotal {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 22px;
+    color: var(--accent);
+    min-width: 52px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    padding-bottom: 2px;
+    white-space: nowrap;
+  }
+  .field textarea {
+    background: var(--ground);
+    border: 1px solid var(--edge);
+    color: var(--ink);
+    padding: 7px 9px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+  }
   .pooltable { display: flex; flex-direction: column; }
   .pool { display: flex; flex-direction: column; gap: 6px; padding: 12px 0; border-bottom: 1px solid var(--panel-2); }
   .pool:first-child { padding-top: 0; }
@@ -567,7 +601,7 @@
   .pdot.shield { background: var(--shield); }
   .pdot.hp { background: var(--hp); }
   .pdot.armor { background: var(--armor); }
-  .pool-groups { display: flex; gap: 18px; }
+  .pool-groups { display: flex; gap: 14px 18px; flex-wrap: wrap; }
   .pgroup { display: flex; flex-direction: column; gap: 3px; }
   .pcap { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
   .stepbtn:disabled { opacity: 0.35; cursor: not-allowed; }
@@ -653,9 +687,9 @@
           <button class="die" data-die="100">d100</button>
         </div>
         <div class="checks">
-          <h3>Skill checks &middot; d20 + your stat mod</h3>
+          <h3>Checks &middot; d20 + stat mod + misc</h3>
           <div class="check-row" id="check-row"></div>
-          <p class="hint">Set your stat mods on the Character tab. Melee uses your DMG mod.</p>
+          <p class="hint">Stat mods, misc bonuses, badass rank and melee die live on the Character tab. Melee dmg rolls your melee die + DMG mod.</p>
         </div>
       </div>
       <div class="panel">
@@ -862,8 +896,16 @@
             <input id="c-name" maxlength="40" placeholder="Vault Hunter">
           </div>
           <div class="field">
-            <label for="c-class">Class / Archetype</label>
-            <input id="c-class" maxlength="40" placeholder="e.g. Gunner">
+            <label for="c-archetype">Archetype</label>
+            <input id="c-archetype" maxlength="40" placeholder="e.g. Deadeye">
+          </div>
+          <div class="field">
+            <label for="c-class">Class</label>
+            <input id="c-class" maxlength="40" placeholder="e.g. Assassin">
+          </div>
+          <div class="field" style="grid-column: 1 / -1;">
+            <label for="c-background">Background</label>
+            <input id="c-background" maxlength="60" placeholder="e.g. The Blade">
           </div>
           <div class="field">
             <label for="c-level">Level</label>
@@ -880,14 +922,45 @@
         </div>
       </div>
       <div class="panel">
-        <h2>Stat mods</h2>
+        <h2>Stats</h2>
         <div id="stat-rows"></div>
-        <p class="hint">Enter the modifier your sheet gives you for each stat. These feed the skill-check and attack buttons.</p>
+        <p class="hint">Value is the raw stat from your sheet; the mod is what gets rolled. Mods feed checks, attacks and melee.</p>
+      </div>
+      <div class="panel">
+        <h2>Combat</h2>
+        <div id="combat-rows"></div>
+        <p class="hint">Initiative = badass rank + SPD mod + misc. Movement = 3 + SPD mod + misc. Melee = melee die + DMG mod + misc.</p>
+      </div>
+      <div class="panel">
+        <h2>Checks</h2>
+        <div id="check-panel-rows"></div>
+        <p class="hint">Total = stat mod + misc (gear, background, traits). The dice tab buttons use these totals.</p>
       </div>
       <div class="panel">
         <h2>Vitals</h2>
         <div class="pooltable" id="pool-rows"></div>
         <p class="hint">Use the steppers mid-fight; the header bars follow along. Damage shields first, like the game intends.</p>
+      </div>
+      <div class="panel">
+        <h2>Loadout &amp; notes</h2>
+        <div class="formgrid">
+          <div class="field" style="grid-column: 1 / -1;">
+            <label for="c-favored">Favored gun</label>
+            <select id="c-favored"></select>
+          </div>
+          <div class="field" style="grid-column: 1 / -1;">
+            <label for="c-potions">Potions</label>
+            <textarea id="c-potions" rows="2" placeholder="e.g. 2x Insta-Health"></textarea>
+          </div>
+          <div class="field" style="grid-column: 1 / -1;">
+            <label for="c-traits">Background &amp; traits</label>
+            <textarea id="c-traits" rows="3" placeholder="Background effects and traits from your sheet"></textarea>
+          </div>
+          <div class="field" style="grid-column: 1 / -1;">
+            <label for="c-feat">Archetype feat</label>
+            <textarea id="c-feat" rows="2" placeholder="e.g. Line of Sight: +1 on Search Checks with a Sniper Rifle equipped"></textarea>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -917,26 +990,44 @@
     "Legendary": "#f5b81c"
   };
   var STATS = [
-    { key: "acc", name: "ACC", desc: "Accuracy — gun attacks, precision" },
-    { key: "dmg", name: "DMG", desc: "Damage — melee, brute force" },
-    { key: "spd", name: "SPD", desc: "Speed — initiative, sneaking, reflexes" },
-    { key: "mst", name: "MST", desc: "Mastery — talents, know-how" }
+    { key: "acc", name: "ACC", desc: "Accuracy" },
+    { key: "dmg", name: "DMG", desc: "Damage" },
+    { key: "spd", name: "SPD", desc: "Speed" },
+    { key: "mst", name: "MST", desc: "Mastery" }
+  ];
+  var CHECKS = [
+    { key: "interact", name: "Interact", stat: "acc" },
+    { key: "talk", name: "Talk", stat: "spd" },
+    { key: "insight", name: "Insight", stat: "acc" },
+    { key: "sneak", name: "Sneak", stat: "mst" },
+    { key: "search", name: "Search", stat: "mst" },
+    { key: "traverse", name: "Traverse", stat: "spd" }
   ];
   var POOLS = [
-    { key: "shield", name: "Shield" },
-    { key: "hp", name: "Health" },
-    { key: "armor", name: "Armor" }
+    { key: "shield", name: "Shield", extra: "recharge", extraName: "Recharge" },
+    { key: "hp", name: "Health", extra: "regen", extraName: "Regen" },
+    { key: "armor", name: "Armor" },
+    { key: "grenades", name: "Grenades" }
   ];
+  var GUN_TYPES = ["Pistol", "SMG", "Combat Rifle", "Shotgun", "Sniper Rifle", "Rocket Launcher"];
 
   function defaultState() {
     return {
       character: {
-        name: "", cls: "", level: 1, gold: 0, xp: 0, badass: 3,
-        mods: { acc: 0, dmg: 0, spd: 0, mst: 0 },
+        name: "", archetype: "", cls: "", background: "", level: 1,
+        gold: 0, xp: 0, badass: 3, badassRank: 1,
+        stats: {
+          acc: { val: 0, mod: 0 }, dmg: { val: 0, mod: 0 },
+          spd: { val: 0, mod: 0 }, mst: { val: 0, mod: 0 }
+        },
+        checkMisc: { interact: 0, talk: 0, insight: 0, sneak: 0, search: 0, traverse: 0, initiative: 0, movement: 0 },
+        meleeDie: "1d6", meleeMisc: 0,
+        favoredGun: "", potions: "", traits: "", feat: "",
         pools: {
-          shield: { cur: 10, max: 10 },
-          hp: { cur: 20, max: 20 },
-          armor: { cur: 0, max: 0 }
+          shield: { cur: 10, max: 10, recharge: 0 },
+          hp: { cur: 20, max: 20, regen: 0 },
+          armor: { cur: 0, max: 0 },
+          grenades: { cur: 0, max: 0 }
         }
       },
       guns: [{
@@ -965,6 +1056,30 @@
     };
   }
 
+  // Upgrade characters saved by earlier versions of the app in place.
+  function migrateCharacter(c) {
+    if (!c.stats) {
+      c.stats = {};
+      ["acc", "dmg", "spd", "mst"].forEach(function (k) {
+        c.stats[k] = { val: 0, mod: (c.mods && c.mods[k]) || 0 };
+      });
+      delete c.mods;
+    }
+    if (c.archetype == null) c.archetype = "";
+    if (c.background == null) c.background = "";
+    if (c.badassRank == null) c.badassRank = 1;
+    if (!c.checkMisc) c.checkMisc = { interact: 0, talk: 0, insight: 0, sneak: 0, search: 0, traverse: 0, initiative: 0, movement: 0 };
+    if (!c.meleeDie) c.meleeDie = "1d6";
+    if (c.meleeMisc == null) c.meleeMisc = 0;
+    if (c.favoredGun == null) c.favoredGun = "";
+    if (c.potions == null) c.potions = "";
+    if (c.traits == null) c.traits = "";
+    if (c.feat == null) c.feat = "";
+    if (!c.pools.grenades) c.pools.grenades = { cur: 0, max: 0 };
+    if (c.pools.shield.recharge == null) c.pools.shield.recharge = 0;
+    if (c.pools.hp.regen == null) c.pools.hp.regen = 0;
+  }
+
   var state = load();
 
   function load() {
@@ -976,6 +1091,7 @@
           if (!parsed.gear) parsed.gear = [];
           if (!parsed.skillPts) parsed.skillPts = {};
           if (parsed.skillClass == null) parsed.skillClass = "";
+          migrateCharacter(parsed.character);
           return parsed;
         }
       }
@@ -1049,17 +1165,52 @@
     addLog(entry);
   }
 
-  function rollCheck(statKey, label, note) {
-    var mod = statKey === "flat" ? 0 : state.character.mods[statKey];
+  function checkDef(key) {
+    return CHECKS.find(function (c) { return c.key === key; });
+  }
+  function statMod(k) { return int(state.character.stats[k].mod, 0); }
+  function checkTotal(key) {
+    var d = checkDef(key);
+    return d ? statMod(d.stat) + int(state.character.checkMisc[d.key], 0) : 0;
+  }
+  function initiativeTotal() {
+    return int(state.character.badassRank, 0) + statMod("spd") + int(state.character.checkMisc.initiative, 0);
+  }
+  function movementTotal() {
+    return 3 + statMod("spd") + int(state.character.checkMisc.movement, 0);
+  }
+  function meleeBonus() { return statMod("dmg") + int(state.character.meleeMisc, 0); }
+
+  function rollCheck(key, note) {
+    var mod, label;
+    if (key === "initiative") { mod = initiativeTotal(); label = "Initiative"; }
+    else {
+      var d = checkDef(key);
+      if (!d) return;
+      mod = checkTotal(key);
+      label = d.name;
+    }
     var die = rollDie(20);
-    var entry = {
-      kind: "check", statKey: statKey, label: label,
+    addLog({
+      kind: "check", key: key,
       total: die + mod,
       what: label + " check (d20 " + signed(mod) + ")" + (note ? " · " + note : ""),
       detail: "rolled " + die + " " + signed(mod),
       flag: die === 20 ? "nat 20" : die === 1 ? "nat 1" : null
-    };
-    addLog(entry);
+    });
+  }
+
+  function rollMelee(note) {
+    var die = state.character.meleeDie || "1d6";
+    var r = rollSpec(die);
+    var bonus = meleeBonus();
+    addLog({
+      kind: "melee",
+      total: r.total + bonus,
+      what: "Melee damage (" + die + " " + signed(bonus) + ")" + (note ? " · " + note : ""),
+      detail: die + ": " + r.text + " " + signed(bonus),
+      flag: null
+    });
   }
 
   function throwGrenade(gear, note) {
@@ -1097,7 +1248,7 @@
 
   /* ---------- attack resolution ---------- */
   function attack(gun, note) {
-    var accMod = state.character.mods.acc;
+    var accMod = statMod("acc");
     var die = rollDie(20);
     var total = die + accMod;
     var result;
@@ -1237,12 +1388,15 @@
   function renderHud() {
     var c = state.character;
     $("hud-name").textContent = c.name || "Vault Hunter";
-    $("hud-class").textContent = (c.cls || "Unclassed") + " · LV " + c.level;
+    var who = [c.archetype, c.cls].filter(Boolean).join(" · ") || "Unclassed";
+    $("hud-class").textContent = who + " · LV " + c.level;
     $("token-count").textContent = c.badass;
     POOLS.forEach(function (p) {
+      var bar = $("bar-" + p.key);
+      if (!bar) return;
       var pool = c.pools[p.key];
       var pct = pool.max > 0 ? clamp(Math.round(100 * pool.cur / pool.max), 0, 100) : 0;
-      $("bar-" + p.key).style.width = pct + "%";
+      bar.style.width = pct + "%";
       $("num-" + p.key).textContent = pool.cur + " / " + pool.max;
     });
   }
@@ -1280,12 +1434,13 @@
 
   function renderChecks() {
     var row = $("check-row");
-    row.innerHTML = STATS.map(function (s) {
-      return '<button class="checkbtn" data-check="' + s.key + '">' + s.name +
-        ' <span class="cmod">' + signed(state.character.mods[s.key]) + "</span></button>";
+    row.innerHTML = CHECKS.map(function (c) {
+      return '<button class="checkbtn" data-check="' + c.key + '">' + c.name +
+        ' <span class="cmod">' + signed(checkTotal(c.key)) + "</span></button>";
     }).join("") +
-      '<button class="checkbtn" data-check="melee">Melee <span class="cmod">' +
-      signed(state.character.mods.dmg) + "</span></button>";
+      '<button class="checkbtn" data-check="initiative">Initiative <span class="cmod">' + signed(initiativeTotal()) + "</span></button>" +
+      '<button class="checkbtn" data-check="melee">Melee dmg <span class="cmod">' +
+      esc(state.character.meleeDie || "1d6") + " " + signed(meleeBonus()) + "</span></button>";
   }
 
   function renderGuns() {
@@ -1402,15 +1557,19 @@
       Object.keys(ptsMap).forEach(function (k) {
         if (k.indexOf(t + "|") === 0) spent += ptsMap[k];
       });
-      var rows = (tr.tiers || []).slice(0, 5).map(function (row, ti) {
+      var tiers = (tr.tiers || []).slice(0, 8);
+      var cols = Math.min(5, Math.max.apply(null, tiers.map(function (r) { return (r || []).length; }).concat([1])));
+      var rows = tiers.map(function (row, ti) {
         var need = ti * ppt;
         var locked = spent < need;
-        var cells = (row || []).slice(0, 3).map(function (s, si) {
+        var rowSkills = (row || []).slice(0, 5);
+        var cells = rowSkills.map(function (s, si) {
           var key = t + "|" + ti + "|" + si;
           var pts = ptsMap[key] || 0;
           var max = clamp(int(s.max, 1), 1, 9);
           var open = expandedSkill === key && s.desc;
-          return '<div class="skill' + (pts > 0 ? " active" : "") + (pts >= max ? " maxed" : "") + '">' +
+          var span = rowSkills.length === 1 && cols > 1 ? ' style="grid-column:1/-1"' : "";
+          return '<div class="skill' + (pts > 0 ? " active" : "") + (pts >= max ? " maxed" : "") + '"' + span + ">" +
             '<button class="skill-name" data-sktoggle="' + key + '"' + (s.desc ? ' title="' + esc(s.desc) + '"' : "") + ">" + esc(s.name) + "</button>" +
             (open ? '<span class="skill-desc">' + esc(s.desc) + "</span>" : "") +
             '<div class="skill-pts">' +
@@ -1421,7 +1580,7 @@
         }).join("");
         return '<div class="tier-row"><div class="tier-tag' + (locked ? " locked" : "") + '">' +
           "<span>Tier " + (ti + 1) + "</span>" + (need ? "<span>" + need + " pts</span>" : "") + "</div>" +
-          '<div class="tier-slots">' + cells + "</div></div>";
+          '<div class="tier-slots" style="grid-template-columns:repeat(' + cols + ',1fr)">' + cells + "</div></div>";
       }).join("");
       return '<div class="panel tree"><div class="tree-head">' +
         '<span class="tree-title">' + esc(tr.name || "Tree " + (t + 1)) + "</span>" +
@@ -1457,14 +1616,71 @@
   function renderStats() {
     var box = $("stat-rows");
     box.innerHTML = STATS.map(function (s) {
+      var st = state.character.stats[s.key];
       return '<div class="statrow"><span class="sname">' + s.name +
         '<span class="sdesc">' + s.desc + "</span></span>" +
-        '<div class="controls" style="display:flex">' +
-        '<button class="stepbtn" data-statmod="' + s.key + '" data-dir="-1" aria-label="Lower ' + s.name + '">&minus;</button>' +
-        '<span class="stepval" id="statval-' + s.key + '">' + signed(state.character.mods[s.key]) + "</span>" +
-        '<button class="stepbtn" data-statmod="' + s.key + '" data-dir="1" aria-label="Raise ' + s.name + '">+</button>' +
+        '<div class="statctl">' +
+        '<div class="pgroup"><span class="pcap">Value</span><input class="numin" type="number" min="0" max="99" data-statval="' + s.key + '" value="' + int(st.val, 0) + '" aria-label="' + s.name + ' value"></div>' +
+        '<div class="pgroup"><span class="pcap">Mod</span><div class="controls" style="display:flex">' +
+        '<button class="stepbtn" data-statmod="' + s.key + '" data-dir="-1" aria-label="Lower ' + s.name + ' mod">&minus;</button>' +
+        '<span class="stepval" id="statval-' + s.key + '">' + signed(st.mod) + "</span>" +
+        '<button class="stepbtn" data-statmod="' + s.key + '" data-dir="1" aria-label="Raise ' + s.name + ' mod">+</button>' +
+        "</div></div></div></div>";
+    }).join("");
+  }
+
+  function renderCombat() {
+    var c = state.character;
+    $("combat-rows").innerHTML =
+      '<div class="statrow"><span class="sname">Badass Rank<span class="sdesc">feeds Initiative</span></span>' +
+      '<div class="controls" style="display:flex">' +
+      '<button class="stepbtn" data-brank="1" data-dir="-1" aria-label="Lower badass rank">&minus;</button>' +
+      '<span class="stepval" id="brank-val">' + int(c.badassRank, 1) + "</span>" +
+      '<button class="stepbtn" data-brank="1" data-dir="1" aria-label="Raise badass rank">+</button>' +
+      "</div></div>" +
+      '<div class="statrow"><span class="sname">Initiative<span class="sdesc">BR + SPD mod + misc</span></span>' +
+      '<div class="statctl">' +
+      '<div class="pgroup"><span class="pcap">Misc</span><input class="numin" type="number" min="-20" max="20" data-checkmisc="initiative" value="' + int(c.checkMisc.initiative, 0) + '" aria-label="Initiative misc mod"></div>' +
+      '<span class="dtotal" id="total-initiative">' + signed(initiativeTotal()) + "</span></div></div>" +
+      '<div class="statrow"><span class="sname">Movement<span class="sdesc">3 + SPD mod + misc</span></span>' +
+      '<div class="statctl">' +
+      '<div class="pgroup"><span class="pcap">Misc</span><input class="numin" type="number" min="-20" max="20" data-checkmisc="movement" value="' + int(c.checkMisc.movement, 0) + '" aria-label="Movement misc mod"></div>' +
+      '<span class="dtotal" id="total-movement">' + movementTotal() + " sq</span></div></div>" +
+      '<div class="statrow"><span class="sname">Melee<span class="sdesc">melee die + DMG mod + misc</span></span>' +
+      '<div class="statctl">' +
+      '<div class="pgroup"><span class="pcap">Die</span><input class="numin diein" id="c-meleedie" value="' + esc(c.meleeDie || "1d6") + '" aria-label="Melee die"></div>' +
+      '<div class="pgroup"><span class="pcap">Misc</span><input class="numin" type="number" min="-20" max="20" id="c-meleemisc" value="' + int(c.meleeMisc, 0) + '" aria-label="Melee misc bonus"></div>' +
+      '<span class="dtotal" id="total-melee">' + esc(c.meleeDie || "1d6") + " " + signed(meleeBonus()) + "</span></div></div>";
+  }
+
+  function renderChecksPanel() {
+    var c = state.character;
+    $("check-panel-rows").innerHTML = CHECKS.map(function (ck) {
+      return '<div class="statrow"><span class="sname">' + ck.name +
+        '<span class="sdesc" id="chk-stat-' + ck.key + '">' + ck.stat.toUpperCase() + " " + signed(statMod(ck.stat)) + "</span></span>" +
+        '<div class="statctl">' +
+        '<div class="pgroup"><span class="pcap">Misc</span><input class="numin" type="number" min="-20" max="20" data-checkmisc="' + ck.key + '" value="' + int(c.checkMisc[ck.key], 0) + '" aria-label="' + ck.name + ' misc mod"></div>' +
+        '<span class="dtotal" id="chk-total-' + ck.key + '">' + signed(checkTotal(ck.key)) + "</span>" +
+        '<button class="ghostbtn" data-check="' + ck.key + '" style="align-self:center">Roll</button>' +
         "</div></div>";
     }).join("");
+  }
+
+  function updateCheckTotals() {
+    CHECKS.forEach(function (ck) {
+      var t = $("chk-total-" + ck.key);
+      if (t) t.textContent = signed(checkTotal(ck.key));
+      var s = $("chk-stat-" + ck.key);
+      if (s) s.textContent = ck.stat.toUpperCase() + " " + signed(statMod(ck.stat));
+    });
+    var ti = $("total-initiative");
+    if (ti) ti.textContent = signed(initiativeTotal());
+    var tm = $("total-movement");
+    if (tm) tm.textContent = movementTotal() + " sq";
+    var tl = $("total-melee");
+    if (tl) tl.textContent = (state.character.meleeDie || "1d6") + " " + signed(meleeBonus());
+    var br = $("brank-val");
+    if (br) br.textContent = int(state.character.badassRank, 1);
   }
 
   function renderPools() {
@@ -1483,22 +1699,35 @@
         '<button class="stepbtn" data-pool="' + p.key + '" data-part="max" data-dir="-1" aria-label="Lower max ' + p.name + '">&minus;</button>' +
         '<span class="stepval" id="poolmax-' + p.key + '">' + pool.max + "</span>" +
         '<button class="stepbtn" data-pool="' + p.key + '" data-part="max" data-dir="1" aria-label="Raise max ' + p.name + '">+</button>' +
-        "</div></div></div></div>";
+        "</div></div>" +
+        (p.extra
+          ? '<div class="pgroup"><span class="pcap">' + p.extraName + '</span><input class="numin" type="number" min="0" max="99" data-poolfield="' + p.key + ":" + p.extra + '" value="' + int(pool[p.extra], 0) + '" aria-label="' + p.name + " " + p.extraName + '"></div>'
+          : "") +
+        "</div></div>";
     }).join("");
   }
 
   function renderIdentity() {
     var c = state.character;
     $("c-name").value = c.name;
+    $("c-archetype").value = c.archetype;
     $("c-class").value = c.cls;
+    $("c-background").value = c.background;
     $("c-level").value = c.level;
     $("c-gold").value = c.gold;
     $("c-xp").value = c.xp;
+    $("c-favored").innerHTML = '<option value="">— none —</option>' + GUN_TYPES.map(function (t) {
+      return "<option" + (c.favoredGun === t ? " selected" : "") + ">" + t + "</option>";
+    }).join("");
+    $("c-potions").value = c.potions;
+    $("c-traits").value = c.traits;
+    $("c-feat").value = c.feat;
   }
 
   function renderAll() {
     renderHud(); renderLog(); renderSteppers(); renderChecks();
-    renderGuns(); renderGear(); renderSkills(); renderStats(); renderPools(); renderIdentity();
+    renderGuns(); renderGear(); renderSkills(); renderStats();
+    renderCombat(); renderChecksPanel(); renderPools(); renderIdentity();
   }
 
   /* ---------- gun form ---------- */
@@ -1631,12 +1860,8 @@
     }
     if (btn.dataset.die) { rollBasic(int(btn.dataset.die, 20)); return; }
     if (btn.dataset.check) {
-      var key = btn.dataset.check;
-      if (key === "melee") rollCheck("dmg", "Melee");
-      else {
-        var stat = STATS.find(function (s) { return s.key === key; });
-        rollCheck(key, stat ? stat.name : key.toUpperCase());
-      }
+      if (btn.dataset.check === "melee") rollMelee();
+      else rollCheck(btn.dataset.check);
       return;
     }
     if (btn.dataset.step) {
@@ -1701,10 +1926,15 @@
           if (!spendToken()) return;
           state.log.shift();
           rollBasic(e0.sides, e0.qty, e0.mod, "reroll · 1 token");
-        } else if (e0.kind === "check") {
+        } else if (e0.kind === "melee") {
           if (!spendToken()) return;
           state.log.shift();
-          rollCheck(e0.statKey, e0.label, "reroll · 1 token");
+          rollMelee("reroll · 1 token");
+        } else if (e0.kind === "check") {
+          if (e0.key !== "initiative" && !checkDef(e0.key)) return;
+          if (!spendToken()) return;
+          state.log.shift();
+          rollCheck(e0.key, "reroll · 1 token");
         }
       }
       return;
@@ -1762,11 +1992,19 @@
       return;
     }
     if (btn.dataset.statmod) {
-      var mods = state.character.mods;
-      mods[btn.dataset.statmod] = clamp(mods[btn.dataset.statmod] + int(btn.dataset.dir, 1), -5, 15);
+      var st = state.character.stats[btn.dataset.statmod];
+      st.mod = clamp(st.mod + int(btn.dataset.dir, 1), -5, 15);
       save();
-      $("statval-" + btn.dataset.statmod).textContent = signed(mods[btn.dataset.statmod]);
+      $("statval-" + btn.dataset.statmod).textContent = signed(st.mod);
       renderChecks();
+      updateCheckTotals();
+      return;
+    }
+    if (btn.dataset.brank) {
+      state.character.badassRank = clamp(int(state.character.badassRank, 1) + int(btn.dataset.dir, 1), 0, 99);
+      save();
+      renderChecks();
+      updateCheckTotals();
       return;
     }
     if (btn.dataset.pool) {
@@ -1786,8 +2024,9 @@
     }
   });
 
-  /* ---------- identity inputs ---------- */
-  [["c-name", "name"], ["c-class", "cls"]].forEach(function (pair) {
+  /* ---------- identity & sheet inputs ---------- */
+  [["c-name", "name"], ["c-archetype", "archetype"], ["c-class", "cls"], ["c-background", "background"],
+   ["c-potions", "potions"], ["c-traits", "traits"], ["c-feat", "feat"]].forEach(function (pair) {
     $(pair[0]).addEventListener("input", function () {
       state.character[pair[1]] = this.value;
       save(); renderHud();
@@ -1798,6 +2037,51 @@
       state.character[f[1]] = clamp(int(this.value, f[4]), f[2], f[3]);
       save(); renderHud();
     });
+  });
+  $("c-favored").addEventListener("change", function () {
+    state.character.favoredGun = this.value;
+    save();
+  });
+
+  // Combat, checks and pool fields are re-rendered panels, so handle them
+  // through one delegated listener instead of per-element bindings.
+  document.addEventListener("input", function (ev) {
+    var el = ev.target;
+    var ds = el.dataset || {};
+    if (ds.statval) {
+      state.character.stats[ds.statval].val = clamp(int(el.value, 0), 0, 99);
+      save();
+      return;
+    }
+    if (ds.checkmisc) {
+      state.character.checkMisc[ds.checkmisc] = clamp(int(el.value, 0), -20, 20);
+      save();
+      updateCheckTotals();
+      renderChecks();
+      return;
+    }
+    if (ds.poolfield) {
+      var pf = ds.poolfield.split(":");
+      state.character.pools[pf[0]][pf[1]] = clamp(int(el.value, 0), 0, 99);
+      save();
+      return;
+    }
+    if (el.id === "c-meleedie") {
+      if (parseDice(el.value)) {
+        state.character.meleeDie = el.value.trim().toLowerCase();
+        save();
+        updateCheckTotals();
+        renderChecks();
+      }
+      return;
+    }
+    if (el.id === "c-meleemisc") {
+      state.character.meleeMisc = clamp(int(el.value, 0), -20, 20);
+      save();
+      updateCheckTotals();
+      renderChecks();
+      return;
+    }
   });
 
   renderAll();

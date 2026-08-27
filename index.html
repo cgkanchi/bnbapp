@@ -424,8 +424,19 @@
   .gun-empty { color: var(--muted); font-size: 14px; }
   .geffect { color: var(--muted); font-size: 13px; font-style: italic; }
   .chip.equipped { border-color: var(--good); color: var(--good); }
+  .chip.favored { border-color: var(--accent); color: var(--accent); }
   .throwbtn { background: var(--shield); border-color: var(--shield); color: #08202e; }
   .throwbtn:hover { background: #7bccff; }
+  .drinkbtn { background: var(--good); border-color: var(--good); color: #14230a; }
+  .drinkbtn:hover { background: #a8e84a; }
+  .drinkbtn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .barselect {
+    background: var(--ground);
+    border: 1px solid var(--edge);
+    color: var(--ink);
+    padding: 0 9px;
+    font-size: 13px;
+  }
 
   /* ---------- forms ---------- */
   .gunform { margin-bottom: 16px; }
@@ -789,7 +800,12 @@
     </div>
     <div class="gun-list-head">
       <h3>Your arsenal &middot; attack rolls d20 + ACC mod against the gun's accuracy bar</h3>
-      <div style="display:flex; gap:8px;">
+      <div style="display:flex; gap:8px; align-items:stretch; flex-wrap:wrap;">
+        <select id="loot-type" class="barselect" aria-label="Gun type to loot">
+          <option value="">Any type</option>
+          <option>Pistol</option><option>SMG</option><option>Shotgun</option>
+          <option>Combat Rifle</option><option>Sniper Rifle</option><option>Rocket Launcher</option>
+        </select>
         <button class="primarybtn" id="loot-gun">Loot a gun</button>
         <button class="primarybtn" id="add-gun">+ Add gun</button>
       </div>
@@ -808,7 +824,7 @@
           <div class="field">
             <label for="ge-kind">Kind</label>
             <select id="ge-kind">
-              <option>Shield</option><option>Grenade Mod</option><option>Relic / Other</option>
+              <option>Shield</option><option>Grenade Mod</option><option>Potion</option><option>Relic / Other</option>
             </select>
           </div>
           <div class="field" style="grid-column: span 2;">
@@ -834,6 +850,14 @@
             <label for="ge-dmg">Damage</label>
             <input id="ge-dmg" value="2d6" pattern="\s*\d{1,2}[dD]\d{1,3}\s*([+\-]\s*\d{1,3})?\s*" title="Dice like 2d6 or 1d8+2">
           </div>
+          <div class="field" data-kind-only="Potion">
+            <label for="ge-qty">Quantity</label>
+            <input id="ge-qty" type="number" min="0" max="99" value="1">
+          </div>
+          <div class="field" data-kind-only="Potion">
+            <label for="ge-heal">Heals (dice, optional)</label>
+            <input id="ge-heal" value="2d8" pattern="\s*(\d{1,2}[dD]\d{1,3}\s*([+\-]\s*\d{1,3})?)?\s*" title="Dice like 2d8, or leave empty for effect-only potions">
+          </div>
           <div class="field" data-kind-only="Grenade Mod">
             <label for="ge-element">Element</label>
             <select id="ge-element">
@@ -853,7 +877,7 @@
       </form>
     </div>
     <div class="gun-list-head">
-      <h3>Shields, grenade mods, relics &middot; equip a shield to set your shield pool</h3>
+      <h3>Shields, grenade mods, potions, relics &middot; equip a shield to set your shield pool</h3>
       <button class="primarybtn" id="add-gear">+ Add gear</button>
     </div>
     <div class="gun-grid" id="gear-grid"></div>
@@ -1239,6 +1263,33 @@
     }, 2500);
   }
 
+  function drinkPotion(gear) {
+    if (int(gear.qty, 0) <= 0) return;
+    gear.qty = int(gear.qty, 0) - 1;
+    var detail;
+    var healed = 0;
+    if (gear.heal && parseDice(gear.heal)) {
+      var r = rollSpec(gear.heal);
+      healed = r.total;
+      var hp = state.character.pools.hp;
+      hp.cur = Math.min(hp.cur + healed, hp.max);
+      detail = gear.heal + ": " + r.text + " = +" + healed + " health" + (gear.effect ? " · " + gear.effect : "");
+    } else {
+      detail = gear.effect || "consumed";
+    }
+    addLog({
+      kind: "potion",
+      total: healed,
+      what: gear.name + " — drink (" + gear.qty + " left)",
+      detail: detail,
+      flag: null
+    });
+    save();
+    renderGear();
+    renderPools();
+    renderHud();
+  }
+
   function spendToken() {
     if (state.character.badass <= 0) return false;
     state.character.badass -= 1;
@@ -1349,9 +1400,9 @@
     return pairs[pairs.length - 1][0];
   }
 
-  function generateGun(level) {
+  function generateGun(level, forcedType) {
     level = clamp(int(level, 1), 1, 30);
-    var type = pick(Object.keys(GUN_ARCH));
+    var type = GUN_ARCH[forcedType] ? forcedType : pick(Object.keys(GUN_ARCH));
     var arch = GUN_ARCH[type];
     var rarity = weightedPick([
       ["Common", Math.max(4, 40 - level * 2)],
@@ -1450,6 +1501,8 @@
       var elColor = ELEMENT_COLORS[g.element];
       var elChip = g.element && g.element !== "None"
         ? '<span class="chip element" style="--el:' + elColor + '">' + esc(g.element) + "</span>" : "";
+      var favChip = state.character.favoredGun && g.type === state.character.favoredGun
+        ? '<span class="chip favored">Favored</span>' : "";
       var last = g.lastResult
         ? '<div class="gun-result"><div class="rline">' + esc(g.lastResult.headline) +
           '</div><div class="rdetail">' + esc(g.lastResult.detail) + "</div></div>"
@@ -1458,7 +1511,7 @@
         '<div><div class="gname">' + esc(g.name) + "</div>" +
         '<div class="gmeta">' + esc(g.rarity) + " " + esc(g.type) +
         (g.mfr ? " · " + esc(g.mfr) : "") + " · LV " + int(g.level, 1) + "</div></div>" +
-        '<div class="gtags">' + elChip +
+        '<div class="gtags">' + favChip + elChip +
         '<span class="chip">Range ' + int(g.range, 0) + "</span>" +
         '<span class="chip">Dmg ' + esc(g.dmg) + "/hit</span>" +
         '<span class="chip">Crit +' + esc(g.crit) + "</span></div>" +
@@ -1493,6 +1546,14 @@
           chips.push('<span class="chip element" style="--el:' + ELEMENT_COLORS[g.element] + '">' + esc(g.element) + "</span>");
         }
         actions.push('<button class="attackbtn" data-throw="' + esc(g.id) + '">Throw</button>');
+      } else if (g.kind === "Potion") {
+        var qty = int(g.qty, 0);
+        chips.push('<span class="chip">' +
+          '<button class="stepbtn" data-potqty="' + esc(g.id) + '" data-dir="-1" style="width:20px;height:20px;font-size:12px" aria-label="Fewer ' + esc(g.name) + '">&minus;</button>' +
+          ' x' + qty + " " +
+          '<button class="stepbtn" data-potqty="' + esc(g.id) + '" data-dir="1" style="width:20px;height:20px;font-size:12px" aria-label="More ' + esc(g.name) + '">+</button></span>');
+        if (g.heal) chips.push('<span class="chip">Heals ' + esc(g.heal) + "</span>");
+        actions.push('<button class="attackbtn drinkbtn" data-drink="' + esc(g.id) + '"' + (qty <= 0 ? " disabled" : "") + ">Drink</button>");
       }
       return '<div class="panel gun" style="--rarity:' + rarity + '">' +
         '<div><div class="gname">' + esc(g.name) + "</div>" +
@@ -1783,7 +1844,7 @@
   $("gunform-cancel").addEventListener("click", closeGunForm);
   $("add-gun").addEventListener("click", function () { openGunForm(null); });
   $("loot-gun").addEventListener("click", function () {
-    state.guns.unshift(generateGun(state.character.level));
+    state.guns.unshift(generateGun(state.character.level, $("loot-type").value));
     save();
     renderGuns();
   });
@@ -1806,6 +1867,8 @@
     $("ge-rarity").value = gear ? gear.rarity : "Common";
     $("ge-capacity").value = gear && gear.capacity != null ? gear.capacity : 10;
     $("ge-recharge").value = gear && gear.recharge != null ? gear.recharge : 2;
+    $("ge-qty").value = gear && gear.qty != null ? gear.qty : 1;
+    $("ge-heal").value = gear && gear.heal != null ? gear.heal : "2d8";
     $("ge-dmg").value = gear && gear.dmg ? gear.dmg : "2d6";
     $("ge-element").value = gear && gear.element ? gear.element : "None";
     $("ge-effect").value = gear ? gear.effect : "";
@@ -1818,6 +1881,8 @@
     ev.preventDefault();
     var kind = $("ge-kind").value;
     if (kind === "Grenade Mod" && !parseDice($("ge-dmg").value)) return;
+    var heal = $("ge-heal").value.trim().toLowerCase();
+    if (kind === "Potion" && heal && !parseDice(heal)) return;
     var id = $("ge-id").value || "gear-" + Date.now() + "-" + Math.floor(Math.random() * 1e6);
     var gear = {
       id: id,
@@ -1826,6 +1891,8 @@
       rarity: $("ge-rarity").value,
       capacity: clamp(int($("ge-capacity").value, 0), 0, 999),
       recharge: clamp(int($("ge-recharge").value, 0), 0, 99),
+      qty: clamp(int($("ge-qty").value, 1), 0, 99),
+      heal: heal,
       dmg: $("ge-dmg").value.trim().toLowerCase(),
       element: $("ge-element").value,
       effect: $("ge-effect").value.trim()
@@ -1954,6 +2021,19 @@
       if (nade) throwGrenade(nade);
       return;
     }
+    if (btn.dataset.drink) {
+      var pot = state.gear.find(function (g) { return g.id === btn.dataset.drink; });
+      if (pot) drinkPotion(pot);
+      return;
+    }
+    if (btn.dataset.potqty) {
+      var potQ = state.gear.find(function (g) { return g.id === btn.dataset.potqty; });
+      if (potQ) {
+        potQ.qty = clamp(int(potQ.qty, 0) + int(btn.dataset.dir, 1), 0, 99);
+        save(); renderGear();
+      }
+      return;
+    }
     if (btn.dataset.gearedit) {
       var gearE = state.gear.find(function (g) { return g.id === btn.dataset.gearedit; });
       if (gearE) openGearForm(gearE);
@@ -2041,6 +2121,7 @@
   $("c-favored").addEventListener("change", function () {
     state.character.favoredGun = this.value;
     save();
+    renderGuns();
   });
 
   // Combat, checks and pool fields are re-rendered panels, so handle them

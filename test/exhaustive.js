@@ -173,6 +173,12 @@ function section(name) { console.log('\n== ' + name + ' =='); }
     JSON.stringify(looted.map(g => g.dmg)));
   check('looted guns have names/types/mfrs', looted.every(g => g.name && g.type && g.mfr && g.rarity));
   check('looted tiers complete', looted.every(g => ['low', 'mid', 'high'].every(t => Number.isFinite(g.tiers[t].hits) && Number.isFinite(g.tiers[t].crits))));
+  // typed loot
+  await page.selectOption('#loot-type', 'Sniper Rifle');
+  await page.evaluate(() => { for (let i = 0; i < 3; i++) document.getElementById('loot-gun').click(); });
+  const typed = (await getState()).guns.slice(0, 3);
+  check('typed loot only makes snipers', typed.every(g => g.type === 'Sniper Rifle'), JSON.stringify(typed.map(g => g.type)));
+  await page.selectOption('#loot-type', '');
 
   // scrap: two-step confirm, no native dialog
   const scrapTarget = page.locator('.gun', { hasText: 'Renamed Gun' });
@@ -230,6 +236,35 @@ function section(name) { console.log('\n== ' + name + ' =='); }
   await tab('dice');
   check('grenade throw forced max = 18', await topTotal() === 18, 'got ' + await topTotal());
   check('grenade log names element', (await page.locator('#log li .detail').first().textContent()).includes('incendiary'));
+
+  // potions: add, drink (heals HP), qty steppers, empty state
+  await tab('gear');
+  await page.click('#add-gear');
+  await page.selectOption('#ge-kind', 'Potion');
+  check('potion kind shows qty+heal fields', await page.locator('#ge-qty:visible').count() === 1 && await page.locator('#ge-heal:visible').count() === 1);
+  check('potion kind hides dmg/capacity', await page.locator('#ge-dmg:visible').count() === 0 && await page.locator('#ge-capacity:visible').count() === 0);
+  await page.fill('#ge-name', 'Insta-Health');
+  await page.fill('#ge-qty', '2');
+  await page.fill('#ge-heal', '2d8');
+  await page.click('#gearform button[type="submit"]');
+  const potCard = page.locator('#gear-grid .gun', { hasText: 'Insta-Health' });
+  check('potion card shows qty and heal', (await potCard.textContent()).includes('x2') && (await potCard.textContent()).includes('2d8'));
+  // damage HP, then drink with forced max roll (2d8 -> 16)
+  await tab('character');
+  await page.evaluate(() => { for (let i = 0; i < 10; i++) document.querySelector('button[data-pool="hp"][data-part="cur"][data-dir="-1"]').click(); });
+  const hpBefore = (await getState()).character.pools.hp;
+  await tab('gear');
+  await forceRandom(0.9999);
+  await potCard.locator('button[data-drink]').click();
+  await restoreRandom();
+  const hpAfter = (await getState()).character.pools.hp;
+  check('drink heals HP (capped at max)', hpAfter.cur === Math.min(hpBefore.cur + 16, hpBefore.max), hpBefore.cur + ' -> ' + hpAfter.cur);
+  check('drink consumes a potion', (await potCard.textContent()).includes('x1'));
+  check('drink logged with remaining count', (await getState()).log[0].what.includes('1 left'));
+  await potCard.locator('button[data-drink]').click();
+  check('drink at 0 disables button', await potCard.locator('button[data-drink]').isDisabled());
+  await potCard.locator('button[data-potqty][data-dir="1"]').click();
+  check('qty stepper restocks', (await potCard.textContent()).includes('x1'));
 
   // scrap equipped shield clears equip state
   await tab('gear');
@@ -408,6 +443,11 @@ function section(name) { console.log('\n== ' + name + ' =='); }
   check('grenade pool tracks 2/3', (await getState()).character.pools.grenades.cur === 2 && (await getState()).character.pools.grenades.max === 3);
   await page.selectOption('#c-favored', 'Sniper Rifle');
   check('favored gun saves', (await getState()).character.favoredGun === 'Sniper Rifle');
+  await tab('guns');
+  const gunsNow = (await getState()).guns;
+  const sniperCount = gunsNow.filter(g => g.type === 'Sniper Rifle').length;
+  check('favored chips mark exactly the matching guns', await page.locator('.chip.favored').count() === sniperCount, 'snipers=' + sniperCount);
+  await tab('character');
   await page.fill('#c-feat', 'Line of Sight: +1 Search with Sniper equipped');
   check('feat text saves', (await getState()).character.feat.includes('Line of Sight'));
   // pool: cur can't exceed max; lowering max drags cur down
@@ -427,7 +467,8 @@ function section(name) { console.log('\n== ' + name + ' =='); }
   check('name persists', await page.textContent('#hud-name') === 'Tiny Tina');
   const persisted = await getState();
   check('guns persist', persisted.guns.length > 0);
-  check('gear persists', persisted.gear.length === 2, 'got ' + persisted.gear.length);
+  check('gear persists', persisted.gear.length === 3, 'got ' + persisted.gear.length);
+  check('potion qty persists', persisted.gear.find(g => g.kind === 'Potion').qty === 1);
   check('tokens persist', await tokens() === 2);
   await tab('skills');
   check('selected class persists', await page.evaluate(() => document.getElementById('class-select').value) === 'Test Class');

@@ -16,12 +16,15 @@ tabletop RPG). No build step, no server, no dependencies — open
   natural 20, misses on a natural 1, then rolls all hit and crit dice and
   totals the damage.
 - **Random gun generator** — the **Loot a gun** button rolls up a gun at
-  your character's level: type, manufacturer, level-weighted rarity,
+  your character's level — any type, or a type you pick from the
+  dropdown: manufacturer, level-weighted rarity,
   element chance, scaled damage dice, and a procedurally generated name.
   Edit it afterwards if your GM hands you something different.
 - **Gear tab** — shields (capacity + recharge; **Equip** sets your shield
   pool), grenade mods (damage dice + element with a one-tap **Throw**
-  roll), and relics/other items with free-text effects.
+  roll), potions (quantity + heal dice; **Drink** rolls the healing and
+  applies it to your health pool), and relics/other items with free-text
+  effects.
 - **Badass tokens on rolls** — while you have tokens, your newest roll in
   the log offers **Reroll** (re-rolls the whole thing, attacks included)
   or **+1d6** (boosts the check total, or the damage total on an attack).
@@ -94,7 +97,7 @@ copy and can't edit files, the Skills tab has an **Import class data
 
 ## Testing
 
-`test/exhaustive.js` is a Playwright suite (183 checks) covering every
+`test/exhaustive.js` is a Playwright suite (194 checks) covering every
 control — dice, clamps, gun form validation/edit/scrap, attack bands
 (forced nat 1/nat 20 via a stubbed RNG), loot generation, gear kinds,
 equip syncing, badass-token boosts/rerolls, log capping, persistence,

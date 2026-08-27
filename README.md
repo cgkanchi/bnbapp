@@ -43,6 +43,36 @@ xdg-open index.html      # Linux
 python3 -m http.server 8000
 ```
 
+## Skill trees — filling in your class data
+
+The app ships with no book content, just a template. Open `classes.js`
+and copy the structure for each class you play, straight from the book or
+your character sheet:
+
+```js
+window.BNB_CLASSES = {
+  "My Class": {
+    actionSkill: { name: "...", desc: "..." },   // optional
+    pointsPerTier: 5,        // optional; points in a tree to unlock each tier
+    trees: [                 // up to 3 trees
+      {
+        name: "Tree Name",
+        tiers: [             // up to 5 tiers, each up to 3 skills
+          [ { name: "Skill", max: 5, desc: "Effect per rank" } ],
+          [ /* tier 2 skills... */ ]
+        ]
+      }
+    ]
+  }
+};
+```
+
+Then pick the class on the **Skills** tab and allocate points with the
++/− buttons — higher tiers unlock as you spend points in that tree, and
+allocations are saved per class in your browser. If you're using a hosted
+copy and can't edit files, the Skills tab has an **Import class data
+(JSON)** box that takes the exact same structure as strict JSON.
+
 ## Notes
 
 - Dice notation for damage/crit fields: `NdS` or `NdS+B`, e.g. `2d6`,
@@ -52,7 +82,7 @@ python3 -m http.server 8000
 
 ## Testing
 
-`test/exhaustive.js` is a Playwright suite (136 checks) covering every
+`test/exhaustive.js` is a Playwright suite (163 checks) covering every
 control — dice, clamps, gun form validation/edit/scrap, attack bands
 (forced nat 1/nat 20 via a stubbed RNG), loot generation, gear kinds,
 equip syncing, badass-token boosts/rerolls, log capping, persistence,

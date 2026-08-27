@@ -316,8 +316,46 @@ function section(name) { console.log('\n== ' + name + ' =='); }
   check('grenade boost adds d6', await topTotal() === gBase + 6);
   check('grenade reroll available', await page.locator('button[data-logact="reroll"]').count() === 1);
 
+  /* ================= F2. skill trees ================= */
+  section('F2. Skill trees');
+  await tab('skills');
+  check('class picker lists template class', await page.locator('#class-select option').count() >= 2);
+  check('empty state before class picked', await page.locator('#skills-body .gun-empty').count() === 1);
+  await page.selectOption('#class-select', 'Example Class (replace me)');
+  check('action skill panel renders', (await page.textContent('#skills-body')).includes('Example Action Skill'));
+  check('both template trees render', await page.locator('.tree').count() === 2);
+  check('tier 2 locked at 0 pts', await page.locator('[data-skpt="0|1|0"][data-dir="1"]').isDisabled());
+  const skillOne = page.locator('.skill', { hasText: 'Skill One' });
+  for (let i = 0; i < 5; i++) await skillOne.locator('[data-dir="1"]').click();
+  check('skill one maxed at 5/5', await skillOne.locator('.pval').textContent() === '5/5');
+  check('maxed skill + disabled', await skillOne.locator('[data-dir="1"]').isDisabled());
+  check('tier 2 unlocks at 5 pts', !(await page.locator('[data-skpt="0|1|0"][data-dir="1"]').isDisabled()));
+  check('tree total shows 5 pts', await page.locator('.tree').first().locator('.tree-pts').textContent() === '5 pts');
+  await skillOne.locator('[data-dir="-1"]').click();
+  check('minus decrements to 4/5', await skillOne.locator('.pval').textContent() === '4/5');
+  check('tier 2 relocks below threshold', await page.locator('[data-skpt="0|1|0"][data-dir="1"]').isDisabled());
+  await skillOne.locator('[data-dir="1"]').click();
+  await skillOne.locator('.skill-name').click();
+  check('skill description expands on tap', await page.locator('.skill-desc').count() === 1);
+  await skillOne.locator('.skill-name').click();
+  check('skill description collapses', await page.locator('.skill-desc').count() === 0);
+  // JSON import path
+  await page.click('details summary');
+  await page.fill('#class-json', JSON.stringify({ 'Test Class': { trees: [{ name: 'T', tiers: [[{ name: 'Solo Skill', max: 2, desc: 'x' }]] }] } }));
+  await page.click('#class-json-load');
+  check('import reports success', (await page.textContent('#class-json-msg')).includes('Loaded 1'));
+  await page.selectOption('#class-select', 'Test Class');
+  check('imported class renders', await page.locator('.skill', { hasText: 'Solo Skill' }).count() === 1);
+  await page.click('[data-skpt="0|0|0"][data-dir="1"]');
+  await page.click('[data-skpt="0|0|0"][data-dir="1"]');
+  check('imported skill caps at its max (2/2)', await page.locator('.skill .pval').first().textContent() === '2/2');
+  await page.fill('#class-json', '{oops');
+  await page.click('#class-json-load');
+  check('bad JSON reports a readable error', (await page.textContent('#class-json-msg')).includes("Couldn't load"));
+
   /* ================= G. log behavior ================= */
   section('G. Log behavior');
+  await tab('dice');
   await page.evaluate(() => { for (let i = 0; i < 70; i++) document.querySelector('button[data-die="4"]').click(); });
   check('log caps at 60 entries', (await getState()).log.length === 60);
   check('log DOM matches cap', await logCount() === 60);
@@ -355,6 +393,13 @@ function section(name) { console.log('\n== ' + name + ' =='); }
   check('guns persist', persisted.guns.length > 0);
   check('gear persists', persisted.gear.length === 2, 'got ' + persisted.gear.length);
   check('tokens persist', await tokens() === 2);
+  await tab('skills');
+  check('selected class persists', await page.evaluate(() => document.getElementById('class-select').value) === 'Test Class');
+  check('imported class survives reload', await page.locator('.skill', { hasText: 'Solo Skill' }).count() === 1);
+  check('imported class points persist', await page.locator('.skill .pval').first().textContent() === '2/2');
+  await page.selectOption('#class-select', 'Example Class (replace me)');
+  check('per-class allocations kept when switching back',
+    await page.locator('.skill', { hasText: 'Skill One' }).locator('.pval').textContent() === '5/5');
 
   /* ================= J. responsive: no horizontal overflow ================= */
   section('J. Responsive layout');
@@ -365,7 +410,7 @@ function section(name) { console.log('\n== ' + name + ' =='); }
   await page.click('#gunform-save');
   for (const width of [320, 360, 375, 414, 768, 1200]) {
     await page.setViewportSize({ width, height: 800 });
-    for (const t of ['dice', 'guns', 'gear', 'character']) {
+    for (const t of ['dice', 'guns', 'gear', 'skills', 'character']) {
       await tab(t);
       await page.waitForTimeout(50);
       const overflow = await page.evaluate(() => {

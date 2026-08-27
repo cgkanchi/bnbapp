@@ -462,17 +462,115 @@
   .form-actions { display: flex; gap: 8px; margin-top: 14px; }
   @media (max-width: 640px) { .tier-grid { grid-template-columns: 1fr; } }
 
+  /* ---------- skill trees ---------- */
+  .tree-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 14px; align-items: start; }
+  .tree-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+  .tree-title {
+    flex: 1;
+    min-width: 0;
+    color: var(--accent);
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+  }
+  .tree-pts { color: var(--accent); font-size: 12px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .tier-row { display: grid; grid-template-columns: 56px 1fr; gap: 8px; margin-bottom: 8px; }
+  .tier-tag {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    text-align: center;
+    border: 1px solid var(--edge);
+    color: var(--muted);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 4px 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .tier-tag.locked { color: var(--crit); }
+  .tier-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .skill {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 68px;
+    background: var(--ground);
+    border: 1px solid var(--edge);
+    padding: 6px;
+  }
+  .skill.active { border-color: var(--accent); }
+  .skill-name {
+    background: none;
+    border: none;
+    padding: 0;
+    text-align: left;
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 11px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+  .skill-name:hover { color: var(--accent); }
+  .skill-pts { display: flex; align-items: center; gap: 4px; margin-top: auto; }
+  .skill-pts .stepbtn { width: 22px; height: 22px; font-size: 13px; }
+  .skill-pts .pval { font-size: 12px; min-width: 28px; text-align: center; font-variant-numeric: tabular-nums; }
+  .skill-desc { color: var(--muted); font-size: 10px; line-height: 1.35; overflow-wrap: anywhere; }
+  .skill.maxed { border-color: var(--good); }
+  #class-json {
+    width: 100%;
+    min-height: 130px;
+    background: var(--ground);
+    border: 1px solid var(--edge);
+    color: var(--ink);
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 12px;
+    padding: 8px;
+    resize: vertical;
+  }
+  details.panel summary {
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  details.panel[open] summary { margin-bottom: 10px; color: var(--accent); }
+  code { background: var(--ground); border: 1px solid var(--edge); padding: 0 5px; font-size: 12px; }
+
   /* ---------- character ---------- */
   .char-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; align-items: start; }
   .statrow { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--panel-2); }
   .statrow:last-child { border-bottom: none; }
   .statrow .sname { font-weight: 600; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; }
   .statrow .sdesc { color: var(--muted); font-size: 11px; display: block; text-transform: none; letter-spacing: 0; font-weight: 400; }
-  .pooltable { display: flex; flex-direction: column; gap: 10px; }
-  .pool { display: grid; grid-template-columns: 58px 1fr; gap: 10px; align-items: center; }
-  .pool .plabel { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
-  .pool .pcontrols { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .pool .sep { color: var(--muted); }
+  .pooltable { display: flex; flex-direction: column; }
+  .pool { display: flex; flex-direction: column; gap: 6px; padding: 12px 0; border-bottom: 1px solid var(--panel-2); }
+  .pool:first-child { padding-top: 0; }
+  .pool:last-child { border-bottom: none; padding-bottom: 0; }
+  .pool-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .pdot { width: 10px; height: 10px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%); }
+  .pdot.shield { background: var(--shield); }
+  .pdot.hp { background: var(--hp); }
+  .pdot.armor { background: var(--armor); }
+  .pool-groups { display: flex; gap: 18px; }
+  .pgroup { display: flex; flex-direction: column; gap: 3px; }
+  .pcap { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+  .stepbtn:disabled { opacity: 0.35; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -517,6 +615,7 @@
   <button class="tab" role="tab" aria-selected="true" data-pane="dice">Dice</button>
   <button class="tab" role="tab" aria-selected="false" data-pane="guns">Guns</button>
   <button class="tab" role="tab" aria-selected="false" data-pane="gear">Gear</button>
+  <button class="tab" role="tab" aria-selected="false" data-pane="skills">Skills</button>
   <button class="tab" role="tab" aria-selected="false" data-pane="character">Character</button>
 </nav>
 
@@ -727,6 +826,31 @@
     <p class="gun-empty" id="gear-empty">No gear yet. Even a skag-hide shield beats no shield.</p>
   </section>
 
+  <!-- ============ SKILLS ============ -->
+  <section class="pane" id="pane-skills">
+    <div class="gun-list-head">
+      <h3>Skill trees &middot; fill <code>classes.js</code> from your book, or paste the same data as JSON below</h3>
+      <div class="field" style="min-width: 220px;">
+        <label for="class-select">Class</label>
+        <select id="class-select"></select>
+      </div>
+    </div>
+    <div id="skills-body"></div>
+    <details class="panel" style="margin-top: 14px;">
+      <summary>Import class data (JSON)</summary>
+      <p class="hint" style="margin: 0 0 8px;">
+        Same shape as <code>classes.js</code>, as strict JSON (quoted keys):
+        <code>{"My Class": {"actionSkill": {"name": "...", "desc": "..."}, "trees": [{"name": "Tree", "tiers": [[{"name": "Skill", "max": 5, "desc": "..."}]]}]}}</code>.
+        Pasted classes are stored in this browser and merged with <code>classes.js</code>.
+      </p>
+      <textarea id="class-json" spellcheck="false" placeholder='{"My Class": {"trees": [{"name": "Tree", "tiers": [[{"name": "Skill", "max": 5, "desc": "..."}]]}]}}'></textarea>
+      <div class="form-actions">
+        <button class="primarybtn" id="class-json-load" type="button">Load</button>
+        <span class="hint" id="class-json-msg"></span>
+      </div>
+    </details>
+  </section>
+
   <!-- ============ CHARACTER ============ -->
   <section class="pane" id="pane-character">
     <div class="char-grid">
@@ -769,11 +893,13 @@
   </section>
 </main>
 
+<script src="classes.js"></script>
 <script>
 (function () {
   "use strict";
 
   var STORE_KEY = "bnb-echo-deck-v1";
+  var CLASS_KEY = "bnb-echo-deck-classes";
 
   var ELEMENT_COLORS = {
     "Incendiary": "#ff6a2a",
@@ -833,7 +959,9 @@
       gear: [],
       log: [],
       qty: 1,
-      mod: 0
+      mod: 0,
+      skillClass: "",
+      skillPts: {}
     };
   }
 
@@ -846,6 +974,8 @@
         var parsed = JSON.parse(raw);
         if (parsed && parsed.character && parsed.character.pools) {
           if (!parsed.gear) parsed.gear = [];
+          if (!parsed.skillPts) parsed.skillPts = {};
+          if (parsed.skillClass == null) parsed.skillClass = "";
           return parsed;
         }
       }
@@ -1222,6 +1352,108 @@
     $("gear-empty").hidden = state.gear.length > 0;
   }
 
+  /* ---------- skill trees (data-driven from classes.js / pasted JSON) ---------- */
+  function getClasses() {
+    var out = {};
+    var src = window.BNB_CLASSES;
+    if (src && typeof src === "object") {
+      Object.keys(src).forEach(function (k) { out[k] = src[k]; });
+    }
+    try {
+      var extra = JSON.parse(localStorage.getItem(CLASS_KEY) || "null");
+      if (extra && typeof extra === "object") {
+        Object.keys(extra).forEach(function (k) { out[k] = extra[k]; });
+      }
+    } catch (e) { /* bad stored data — ignore */ }
+    return out;
+  }
+
+  var expandedSkill = null; // "tree|tier|slot" whose description is open; not persisted
+
+  function renderSkills() {
+    var classes = getClasses();
+    var names = Object.keys(classes);
+    var sel = $("class-select");
+    sel.innerHTML = '<option value="">— pick a class —</option>' + names.map(function (n) {
+      return '<option value="' + esc(n) + '"' + (state.skillClass === n ? " selected" : "") + ">" + esc(n) + "</option>";
+    }).join("");
+
+    var body = $("skills-body");
+    var cls = classes[state.skillClass];
+    if (!cls || !Array.isArray(cls.trees)) {
+      body.innerHTML = '<p class="gun-empty">No class selected. Add your class to <code>classes.js</code> ' +
+        "(it contains a commented template) or paste its JSON below, then pick it here. " +
+        "Point allocations save per class in this browser.</p>";
+      return;
+    }
+
+    var ppt = clamp(int(cls.pointsPerTier, 5), 1, 20);
+    var ptsMap = state.skillPts[state.skillClass] || {};
+    var action = "";
+    if (cls.actionSkill && cls.actionSkill.name) {
+      action = '<div class="panel" style="margin-bottom:14px"><h2>Action skill</h2>' +
+        '<div class="gname">' + esc(cls.actionSkill.name) + "</div>" +
+        (cls.actionSkill.desc ? '<p class="geffect" style="margin:6px 0 0">' + esc(cls.actionSkill.desc) + "</p>" : "") +
+        "</div>";
+    }
+
+    var trees = cls.trees.slice(0, 3).map(function (tr, t) {
+      var spent = 0;
+      Object.keys(ptsMap).forEach(function (k) {
+        if (k.indexOf(t + "|") === 0) spent += ptsMap[k];
+      });
+      var rows = (tr.tiers || []).slice(0, 5).map(function (row, ti) {
+        var need = ti * ppt;
+        var locked = spent < need;
+        var cells = (row || []).slice(0, 3).map(function (s, si) {
+          var key = t + "|" + ti + "|" + si;
+          var pts = ptsMap[key] || 0;
+          var max = clamp(int(s.max, 1), 1, 9);
+          var open = expandedSkill === key && s.desc;
+          return '<div class="skill' + (pts > 0 ? " active" : "") + (pts >= max ? " maxed" : "") + '">' +
+            '<button class="skill-name" data-sktoggle="' + key + '"' + (s.desc ? ' title="' + esc(s.desc) + '"' : "") + ">" + esc(s.name) + "</button>" +
+            (open ? '<span class="skill-desc">' + esc(s.desc) + "</span>" : "") +
+            '<div class="skill-pts">' +
+            '<button class="stepbtn" data-skpt="' + key + '" data-dir="-1"' + (pts <= 0 ? " disabled" : "") + ' aria-label="Remove point from ' + esc(s.name) + '">&minus;</button>' +
+            '<span class="pval">' + pts + "/" + max + "</span>" +
+            '<button class="stepbtn" data-skpt="' + key + '" data-dir="1"' + ((locked || pts >= max) ? " disabled" : "") + ' aria-label="Add point to ' + esc(s.name) + '">+</button>' +
+            "</div></div>";
+        }).join("");
+        return '<div class="tier-row"><div class="tier-tag' + (locked ? " locked" : "") + '">' +
+          "<span>Tier " + (ti + 1) + "</span>" + (need ? "<span>" + need + " pts</span>" : "") + "</div>" +
+          '<div class="tier-slots">' + cells + "</div></div>";
+      }).join("");
+      return '<div class="panel tree"><div class="tree-head">' +
+        '<span class="tree-title">' + esc(tr.name || "Tree " + (t + 1)) + "</span>" +
+        '<span class="tree-pts">' + spent + " pts</span>" +
+        "</div>" + rows + "</div>";
+    }).join("");
+
+    body.innerHTML = action + '<div class="tree-grid">' + trees + "</div>";
+  }
+
+  $("class-select").addEventListener("change", function () {
+    state.skillClass = this.value;
+    expandedSkill = null;
+    save();
+    renderSkills();
+  });
+
+  $("class-json-load").addEventListener("click", function () {
+    var msg = $("class-json-msg");
+    try {
+      var parsed = JSON.parse($("class-json").value);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Top level must be an object of classes.");
+      var bad = Object.keys(parsed).find(function (k) { return !parsed[k] || !Array.isArray(parsed[k].trees); });
+      if (bad) throw new Error('"' + bad + '" has no "trees" array.');
+      localStorage.setItem(CLASS_KEY, JSON.stringify(parsed));
+      msg.textContent = "Loaded " + Object.keys(parsed).length + " class(es). Pick one above.";
+      renderSkills();
+    } catch (e) {
+      msg.textContent = "Couldn't load: " + e.message;
+    }
+  });
+
   function renderStats() {
     var box = $("stat-rows");
     box.innerHTML = STATS.map(function (s) {
@@ -1239,16 +1471,19 @@
     var box = $("pool-rows");
     box.innerHTML = POOLS.map(function (p) {
       var pool = state.character.pools[p.key];
-      return '<div class="pool"><span class="plabel">' + p.name + "</span>" +
-        '<div class="pcontrols">' +
+      return '<div class="pool">' +
+        '<div class="pool-name"><span class="pdot ' + p.key + '"></span>' + p.name + "</div>" +
+        '<div class="pool-groups">' +
+        '<div class="pgroup"><span class="pcap">Current</span><div class="controls" style="display:flex">' +
         '<button class="stepbtn" data-pool="' + p.key + '" data-part="cur" data-dir="-1" aria-label="Lose ' + p.name + '">&minus;</button>' +
         '<span class="stepval" id="poolcur-' + p.key + '">' + pool.cur + "</span>" +
         '<button class="stepbtn" data-pool="' + p.key + '" data-part="cur" data-dir="1" aria-label="Recover ' + p.name + '">+</button>' +
-        '<span class="sep">of max</span>' +
+        "</div></div>" +
+        '<div class="pgroup"><span class="pcap">Max</span><div class="controls" style="display:flex">' +
         '<button class="stepbtn" data-pool="' + p.key + '" data-part="max" data-dir="-1" aria-label="Lower max ' + p.name + '">&minus;</button>' +
         '<span class="stepval" id="poolmax-' + p.key + '">' + pool.max + "</span>" +
         '<button class="stepbtn" data-pool="' + p.key + '" data-part="max" data-dir="1" aria-label="Raise max ' + p.name + '">+</button>' +
-        "</div></div>";
+        "</div></div></div></div>";
     }).join("");
   }
 
@@ -1263,7 +1498,7 @@
 
   function renderAll() {
     renderHud(); renderLog(); renderSteppers(); renderChecks();
-    renderGuns(); renderGear(); renderStats(); renderPools(); renderIdentity();
+    renderGuns(); renderGear(); renderSkills(); renderStats(); renderPools(); renderIdentity();
   }
 
   /* ---------- gun form ---------- */
@@ -1504,6 +1739,26 @@
       } else {
         armConfirm(btn);
       }
+      return;
+    }
+    if (btn.dataset.skpt) {
+      var parts2 = btn.dataset.skpt.split("|");
+      var classes2 = getClasses();
+      var cls2 = classes2[state.skillClass];
+      var skill2 = cls2 && cls2.trees[parts2[0]] && cls2.trees[parts2[0]].tiers[parts2[1]] &&
+        cls2.trees[parts2[0]].tiers[parts2[1]][parts2[2]];
+      if (!skill2) return;
+      if (!state.skillPts[state.skillClass]) state.skillPts[state.skillClass] = {};
+      var map2 = state.skillPts[state.skillClass];
+      var max2 = clamp(int(skill2.max, 1), 1, 9);
+      map2[btn.dataset.skpt] = clamp((map2[btn.dataset.skpt] || 0) + int(btn.dataset.dir, 1), 0, max2);
+      save();
+      renderSkills();
+      return;
+    }
+    if (btn.dataset.sktoggle) {
+      expandedSkill = expandedSkill === btn.dataset.sktoggle ? null : btn.dataset.sktoggle;
+      renderSkills();
       return;
     }
     if (btn.dataset.statmod) {

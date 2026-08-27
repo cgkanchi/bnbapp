@@ -88,8 +88,9 @@ copy and can't edit files, the Skills tab has an **Import class data
 
 - Dice notation for damage/crit fields: `NdS` or `NdS+B`, e.g. `2d6`,
   `1d8+2`.
-- This is an unofficial fan-made tool. It ships with no game content —
-  you enter your own guns and stats from your own books.
+- This is an unofficial fan-made tool, not affiliated with Nerdvana
+  Games. Class data comes from their freely published class sheets; the
+  book remains the rules source of truth.
 
 ## Testing
 

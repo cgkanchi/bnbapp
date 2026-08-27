@@ -25,6 +25,7 @@
     --cut: 14px;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html, body { margin: 0; padding: 0; }
   body {
     background: var(--ground);
@@ -319,6 +320,18 @@
   }
   .log .flag.bad { background: var(--crit); color: #fff; }
   .log-empty { color: var(--muted); font-size: 13px; margin: 12px 0 0; }
+  .log-actions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .tokenbtn {
+    background: none;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+  }
+  .tokenbtn:hover { background: var(--accent); color: var(--accent-ink); }
 
   /* ---------- guns ---------- */
   .gun-list-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
@@ -395,6 +408,10 @@
   .gun-result .rline { font-weight: 700; }
   .gun-result .rdetail { color: var(--muted); font-size: 12px; margin-top: 2px; }
   .gun-empty { color: var(--muted); font-size: 14px; }
+  .geffect { color: var(--muted); font-size: 13px; font-style: italic; }
+  .chip.equipped { border-color: var(--good); color: var(--good); }
+  .throwbtn { background: var(--shield); border-color: var(--shield); color: #08202e; }
+  .throwbtn:hover { background: #7bccff; }
 
   /* ---------- forms ---------- */
   .gunform { margin-bottom: 16px; }
@@ -485,6 +502,7 @@
 <nav class="tabs" role="tablist" aria-label="Sections">
   <button class="tab" role="tab" aria-selected="true" data-pane="dice">Dice</button>
   <button class="tab" role="tab" aria-selected="false" data-pane="guns">Guns</button>
+  <button class="tab" role="tab" aria-selected="false" data-pane="gear">Gear</button>
   <button class="tab" role="tab" aria-selected="false" data-pane="character">Character</button>
 </nav>
 
@@ -534,6 +552,7 @@
         </div>
         <ul class="log" id="log"></ul>
         <p class="log-empty" id="log-empty">Nothing rolled yet. Squeeze the trigger.</p>
+        <p class="hint">While you have badass tokens, your newest roll offers a reroll or a +1d6 boost — one token each.</p>
       </div>
     </div>
   </section>
@@ -623,10 +642,75 @@
     </div>
     <div class="gun-list-head">
       <h3>Your arsenal &middot; attack rolls d20 + ACC mod against the gun's accuracy bar</h3>
-      <button class="primarybtn" id="add-gun">+ Add gun</button>
+      <div style="display:flex; gap:8px;">
+        <button class="primarybtn" id="loot-gun">Loot a gun</button>
+        <button class="primarybtn" id="add-gun">+ Add gun</button>
+      </div>
     </div>
     <div class="gun-grid" id="gun-grid"></div>
     <p class="gun-empty" id="gun-empty">No guns yet. A vault hunter without a gun is just a tourist &mdash; add one.</p>
+  </section>
+
+  <!-- ============ GEAR ============ -->
+  <section class="pane" id="pane-gear">
+    <div class="panel gunform" id="gearform-panel" hidden>
+      <h2 id="gearform-title">Add gear</h2>
+      <form id="gearform">
+        <input type="hidden" id="ge-id">
+        <div class="formgrid">
+          <div class="field">
+            <label for="ge-kind">Kind</label>
+            <select id="ge-kind">
+              <option>Shield</option><option>Grenade Mod</option><option>Relic / Other</option>
+            </select>
+          </div>
+          <div class="field" style="grid-column: span 2;">
+            <label for="ge-name">Name</label>
+            <input id="ge-name" required maxlength="60" placeholder="e.g. Turtle Skin">
+          </div>
+          <div class="field">
+            <label for="ge-rarity">Rarity</label>
+            <select id="ge-rarity">
+              <option>Common</option><option>Uncommon</option><option>Rare</option>
+              <option>Epic</option><option>Legendary</option>
+            </select>
+          </div>
+          <div class="field" data-kind-only="Shield">
+            <label for="ge-capacity">Capacity</label>
+            <input id="ge-capacity" type="number" min="0" max="999" value="10">
+          </div>
+          <div class="field" data-kind-only="Shield">
+            <label for="ge-recharge">Recharge rate</label>
+            <input id="ge-recharge" type="number" min="0" max="99" value="2">
+          </div>
+          <div class="field" data-kind-only="Grenade Mod">
+            <label for="ge-dmg">Damage</label>
+            <input id="ge-dmg" value="2d6" pattern="\s*\d{1,2}[dD]\d{1,3}\s*([+\-]\s*\d{1,3})?\s*" title="Dice like 2d6 or 1d8+2">
+          </div>
+          <div class="field" data-kind-only="Grenade Mod">
+            <label for="ge-element">Element</label>
+            <select id="ge-element">
+              <option>None</option><option>Incendiary</option><option>Shock</option>
+              <option>Corrosive</option><option>Radiation</option><option>Cryo</option><option>Explosive</option>
+            </select>
+          </div>
+          <div class="field" style="grid-column: 1 / -1;">
+            <label for="ge-effect">Effect / notes</label>
+            <input id="ge-effect" maxlength="200" placeholder="e.g. Immune to shock damage while shield is up">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="primarybtn">Save gear</button>
+          <button type="button" class="ghostbtn" id="gearform-cancel">Cancel</button>
+        </div>
+      </form>
+    </div>
+    <div class="gun-list-head">
+      <h3>Shields, grenade mods, relics &middot; equip a shield to set your shield pool</h3>
+      <button class="primarybtn" id="add-gear">+ Add gear</button>
+    </div>
+    <div class="gun-grid" id="gear-grid"></div>
+    <p class="gun-empty" id="gear-empty">No gear yet. Even a skag-hide shield beats no shield.</p>
   </section>
 
   <!-- ============ CHARACTER ============ -->
@@ -732,6 +816,7 @@
           high: { hits: 2, crits: 1 }
         }
       }],
+      gear: [],
       log: [],
       qty: 1,
       mod: 0
@@ -745,7 +830,10 @@
       var raw = localStorage.getItem(STORE_KEY);
       if (raw) {
         var parsed = JSON.parse(raw);
-        if (parsed && parsed.character && parsed.character.pools) return parsed;
+        if (parsed && parsed.character && parsed.character.pools) {
+          if (!parsed.gear) parsed.gear = [];
+          return parsed;
+        }
       }
     } catch (e) { /* private mode or corrupt data — start fresh */ }
     return defaultState();
@@ -796,15 +884,17 @@
     renderLog();
   }
 
-  function rollBasic(sides) {
-    var qty = state.qty, mod = state.mod;
+  function rollBasic(sides, qty, mod, note) {
+    if (qty == null) qty = state.qty;
+    if (mod == null) mod = state.mod;
     var rolls = [];
     for (var i = 0; i < qty; i++) rolls.push(rollDie(sides));
     var sum = rolls.reduce(function (a, b) { return a + b; }, 0);
     var total = sum + mod;
     var entry = {
+      kind: "dice", sides: sides, qty: qty, mod: mod,
       total: total,
-      what: qty + "d" + sides + (mod ? " " + signed(mod) : ""),
+      what: qty + "d" + sides + (mod ? " " + signed(mod) : "") + (note ? " · " + note : ""),
       detail: "[" + rolls.join(", ") + "]" + (mod ? " " + signed(mod) : ""),
       flag: null
     };
@@ -815,20 +905,40 @@
     addLog(entry);
   }
 
-  function rollCheck(statKey, label) {
+  function rollCheck(statKey, label, note) {
     var mod = statKey === "flat" ? 0 : state.character.mods[statKey];
     var die = rollDie(20);
     var entry = {
+      kind: "check", statKey: statKey, label: label,
       total: die + mod,
-      what: label + " check (d20 " + signed(mod) + ")",
+      what: label + " check (d20 " + signed(mod) + ")" + (note ? " · " + note : ""),
       detail: "rolled " + die + " " + signed(mod),
       flag: die === 20 ? "nat 20" : die === 1 ? "nat 1" : null
     };
     addLog(entry);
   }
 
+  function throwGrenade(gear, note) {
+    var r = rollSpec(gear.dmg);
+    var el = gear.element && gear.element !== "None" ? " " + gear.element.toLowerCase() : "";
+    addLog({
+      kind: "grenade", spec: gear.dmg, name: gear.name, element: gear.element,
+      total: r.total,
+      what: gear.name + " — grenade" + (note ? " · " + note : ""),
+      detail: gear.dmg + ": " + r.text + " = " + r.total + el + " damage",
+      flag: null
+    });
+  }
+
+  function spendToken() {
+    if (state.character.badass <= 0) return false;
+    state.character.badass -= 1;
+    renderHud();
+    return true;
+  }
+
   /* ---------- attack resolution ---------- */
-  function attack(gun) {
+  function attack(gun, note) {
     var accMod = state.character.mods.acc;
     var die = rollDie(20);
     var total = die + accMod;
@@ -838,7 +948,7 @@
       result = {
         headline: "JAM! Natural 1 — the shot goes wide.",
         detail: "Accuracy roll: 1 " + signed(accMod) + " = " + total,
-        total: total, flag: "nat 1"
+        total: total, flag: "nat 1", dmgTotal: null
       };
     } else {
       var tier = total >= 16 ? gun.tiers.high : total >= 8 ? gun.tiers.mid : total >= 2 ? gun.tiers.low : null;
@@ -851,7 +961,7 @@
         result = {
           headline: "Miss — no hits on that band.",
           detail: "Accuracy roll: " + die + " " + signed(accMod) + " = " + total,
-          total: total, flag: badass ? "nat 20" : null
+          total: total, flag: badass ? "nat 20" : null, dmgTotal: null
         };
       } else {
         var dmgTotal = 0, parts = [];
@@ -871,19 +981,98 @@
             (crits ? ", " + crits + " crit" + (crits === 1 ? "" : "s") : "") +
             (badass ? " (BADASS!)" : ""),
           detail: "Accuracy roll: " + die + " " + signed(accMod) + " = " + total + " · " + parts.join(" · "),
-          total: total, flag: badass ? "nat 20" : null
+          total: total, flag: badass ? "nat 20" : null, dmgTotal: dmgTotal
         };
       }
     }
 
     gun.lastResult = result;
     addLog({
+      kind: "attack", gunId: gun.id, dmgTotal: result.dmgTotal,
       total: result.total,
-      what: gun.name + " — attack",
+      what: gun.name + " — attack" + (note ? " · " + note : ""),
       detail: result.headline + " · " + result.detail,
       flag: result.flag
     });
     renderGuns();
+  }
+
+  /* ---------- random gun generator ---------- */
+  var GUN_ARCH = {
+    "Pistol":          { die: 6,  range: 5, tiers: [[1, 0], [2, 0], [2, 1]] },
+    "SMG":             { die: 4,  range: 5, tiers: [[2, 0], [3, 0], [3, 1]] },
+    "Shotgun":         { die: 8,  range: 4, tiers: [[1, 0], [2, 1], [3, 1]] },
+    "Combat Rifle":    { die: 6,  range: 6, tiers: [[1, 0], [2, 0], [3, 1]] },
+    "Sniper Rifle":    { die: 10, range: 8, tiers: [[0, 0], [1, 1], [2, 2]] },
+    "Rocket Launcher": { die: 10, range: 6, tiers: [[0, 0], [1, 0], [2, 1]] }
+  };
+  var MFRS = ["Skuldugger", "Feriore", "Dahlia", "Blackpowder", "Alas!", "Malefactor", "Hyperius", "Stoker", "Torgue"];
+  var RARITY_ADJ = {
+    "Common": ["Rusty", "Scrappy", "Battered"],
+    "Uncommon": ["Sturdy", "Keen", "Mean"],
+    "Rare": ["Vicious", "Slick", "Prime"],
+    "Epic": ["Wicked", "Monstrous", "Baleful"],
+    "Legendary": ["Apocalyptic", "Peerless", "Unstoppable"]
+  };
+  var ELEMENT_WORD = {
+    "Incendiary": "Ember", "Shock": "Static", "Corrosive": "Caustic",
+    "Radiation": "Isotope", "Cryo": "Frostbite", "Explosive": "Payload"
+  };
+  var TYPE_NOUN = {
+    "Pistol": ["Judge", "Sidewinder", "Peacekeeper"],
+    "SMG": ["Chatterbox", "Hornet", "Ripsaw"],
+    "Shotgun": ["Boomstick", "Doorknocker", "Roomsweeper"],
+    "Combat Rifle": ["Warhound", "Ironclad", "Thresher"],
+    "Sniper Rifle": ["Longshot", "Buzzard Eye", "Quiet Word"],
+    "Rocket Launcher": ["Skyhammer", "Mule Kick", "Sendoff"]
+  };
+  var CRIT_BY_RARITY = { "Common": "1d8", "Uncommon": "1d8", "Rare": "1d10", "Epic": "1d12", "Legendary": "2d10" };
+  var ELEMENT_CHANCE = { "Common": 0.1, "Uncommon": 0.25, "Rare": 0.4, "Epic": 0.6, "Legendary": 0.8 };
+
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function weightedPick(pairs) {
+    var total = pairs.reduce(function (a, p) { return a + p[1]; }, 0);
+    var r = Math.random() * total;
+    for (var i = 0; i < pairs.length; i++) {
+      r -= pairs[i][1];
+      if (r < 0) return pairs[i][0];
+    }
+    return pairs[pairs.length - 1][0];
+  }
+
+  function generateGun(level) {
+    level = clamp(int(level, 1), 1, 30);
+    var type = pick(Object.keys(GUN_ARCH));
+    var arch = GUN_ARCH[type];
+    var rarity = weightedPick([
+      ["Common", Math.max(4, 40 - level * 2)],
+      ["Uncommon", 30],
+      ["Rare", 12 + level],
+      ["Epic", 4 + level],
+      ["Legendary", 1 + Math.floor(level / 2)]
+    ]);
+    var rarityDice = { "Common": 0, "Uncommon": 0, "Rare": 1, "Epic": 1, "Legendary": 2 }[rarity];
+    var count = Math.min(6, 1 + Math.floor(level / 8) + rarityDice);
+    var flat = (rarity === "Epic" || rarity === "Legendary") ? Math.floor(level / 5) : 0;
+    var element = Math.random() < ELEMENT_CHANCE[rarity]
+      ? pick(["Incendiary", "Shock", "Corrosive", "Radiation", "Cryo", "Explosive"])
+      : "None";
+    var tiers = {
+      low: { hits: arch.tiers[0][0], crits: arch.tiers[0][1] },
+      mid: { hits: arch.tiers[1][0], crits: arch.tiers[1][1] },
+      high: { hits: arch.tiers[2][0], crits: arch.tiers[2][1] }
+    };
+    if (rarity === "Legendary") tiers.high.hits += 1;
+    var name = pick(RARITY_ADJ[rarity]) + " " +
+      (element !== "None" ? ELEMENT_WORD[element] + " " : "") + pick(TYPE_NOUN[type]);
+    return {
+      id: "gun-" + Date.now() + "-" + Math.floor(Math.random() * 1e6),
+      name: name, type: type, mfr: pick(MFRS), rarity: rarity, level: level,
+      range: arch.range, element: element,
+      dmg: count + "d" + arch.die + (flat ? "+" + flat : ""),
+      crit: CRIT_BY_RARITY[rarity],
+      tiers: tiers
+    };
   }
 
   /* ---------- rendering ---------- */
@@ -902,14 +1091,26 @@
 
   function renderLog() {
     var ul = $("log");
-    ul.innerHTML = state.log.map(function (e) {
+    ul.innerHTML = state.log.map(function (e, i) {
       var cls = e.flag === "nat 20" ? "nat20" : e.flag === "nat 1" ? "nat1" : "";
       var flag = e.flag === "nat 20" ? '<span class="flag">Badass</span>'
                : e.flag === "nat 1" ? '<span class="flag bad">Nat 1</span>' : "";
+      var actions = "";
+      if (i === 0 && state.character.badass > 0 && e.kind) {
+        var btns = [];
+        if (e.kind === "attack") {
+          if (e.dmgTotal != null) btns.push('<button class="tokenbtn" data-logact="boostdmg">+1d6 dmg · 1 token</button>');
+          btns.push('<button class="tokenbtn" data-logact="reroll">Reroll · 1 token</button>');
+        } else {
+          btns.push('<button class="tokenbtn" data-logact="boost">+1d6 · 1 token</button>');
+          btns.push('<button class="tokenbtn" data-logact="reroll">Reroll · 1 token</button>');
+        }
+        actions = '<span class="log-actions">' + btns.join("") + "</span>";
+      }
       return '<li class="' + cls + '">' +
         '<span class="total">' + e.total + "</span>" +
         "<span><span class=\"what\">" + esc(e.what) + "</span>" + flag +
-        '<br><span class="detail">' + esc(e.detail) + "</span></span></li>";
+        '<br><span class="detail">' + esc(e.detail) + "</span>" + actions + "</span></li>";
     }).join("");
     $("log-empty").hidden = state.log.length > 0;
   }
@@ -963,6 +1164,36 @@
     $("gun-empty").hidden = state.guns.length > 0;
   }
 
+  function renderGear() {
+    var grid = $("gear-grid");
+    grid.innerHTML = state.gear.map(function (g) {
+      var rarity = RARITY_COLORS[g.rarity] || "var(--muted)";
+      var chips = [], actions = [];
+      if (g.kind === "Shield") {
+        chips.push('<span class="chip">Cap ' + int(g.capacity, 0) + "</span>");
+        chips.push('<span class="chip">Recharge ' + int(g.recharge, 0) + "</span>");
+        if (state.character.equippedShield === g.id) chips.push('<span class="chip equipped">Equipped</span>');
+        else actions.push('<button class="attackbtn throwbtn" data-equip="' + esc(g.id) + '">Equip</button>');
+      } else if (g.kind === "Grenade Mod") {
+        chips.push('<span class="chip">Dmg ' + esc(g.dmg) + "</span>");
+        if (g.element && g.element !== "None") {
+          chips.push('<span class="chip element" style="--el:' + ELEMENT_COLORS[g.element] + '">' + esc(g.element) + "</span>");
+        }
+        actions.push('<button class="attackbtn" data-throw="' + esc(g.id) + '">Throw</button>');
+      }
+      return '<div class="panel gun" style="--rarity:' + rarity + '">' +
+        '<div><div class="gname">' + esc(g.name) + "</div>" +
+        '<div class="gmeta">' + esc(g.rarity) + " " + esc(g.kind) + "</div></div>" +
+        (chips.length ? '<div class="gtags">' + chips.join("") + "</div>" : "") +
+        (g.effect ? '<div class="geffect">' + esc(g.effect) + "</div>" : "") +
+        '<div class="gun-actions">' + actions.join("") +
+        '<button class="ghostbtn" data-gearedit="' + esc(g.id) + '">Edit</button>' +
+        '<button class="ghostbtn" data-geardel="' + esc(g.id) + '">Scrap</button>' +
+        "</div></div>";
+    }).join("");
+    $("gear-empty").hidden = state.gear.length > 0;
+  }
+
   function renderStats() {
     var box = $("stat-rows");
     box.innerHTML = STATS.map(function (s) {
@@ -1004,7 +1235,7 @@
 
   function renderAll() {
     renderHud(); renderLog(); renderSteppers(); renderChecks();
-    renderGuns(); renderStats(); renderPools(); renderIdentity();
+    renderGuns(); renderGear(); renderStats(); renderPools(); renderIdentity();
   }
 
   /* ---------- gun form ---------- */
@@ -1059,6 +1290,67 @@
   });
   $("gunform-cancel").addEventListener("click", closeGunForm);
   $("add-gun").addEventListener("click", function () { openGunForm(null); });
+  $("loot-gun").addEventListener("click", function () {
+    state.guns.unshift(generateGun(state.character.level));
+    save();
+    renderGuns();
+  });
+
+  /* ---------- gear form ---------- */
+  function syncGearKindFields() {
+    var kind = $("ge-kind").value;
+    document.querySelectorAll("[data-kind-only]").forEach(function (el) {
+      el.hidden = el.dataset.kindOnly !== kind;
+    });
+  }
+  $("ge-kind").addEventListener("change", syncGearKindFields);
+
+  function openGearForm(gear) {
+    $("gearform-panel").hidden = false;
+    $("gearform-title").textContent = gear ? "Edit gear" : "Add gear";
+    $("ge-id").value = gear ? gear.id : "";
+    $("ge-kind").value = gear ? gear.kind : "Shield";
+    $("ge-name").value = gear ? gear.name : "";
+    $("ge-rarity").value = gear ? gear.rarity : "Common";
+    $("ge-capacity").value = gear && gear.capacity != null ? gear.capacity : 10;
+    $("ge-recharge").value = gear && gear.recharge != null ? gear.recharge : 2;
+    $("ge-dmg").value = gear && gear.dmg ? gear.dmg : "2d6";
+    $("ge-element").value = gear && gear.element ? gear.element : "None";
+    $("ge-effect").value = gear ? gear.effect : "";
+    syncGearKindFields();
+    $("ge-name").focus();
+  }
+  function closeGearForm() { $("gearform-panel").hidden = true; }
+
+  $("gearform").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var kind = $("ge-kind").value;
+    if (kind === "Grenade Mod" && !parseDice($("ge-dmg").value)) return;
+    var id = $("ge-id").value || "gear-" + Date.now() + "-" + Math.floor(Math.random() * 1e6);
+    var gear = {
+      id: id,
+      kind: kind,
+      name: $("ge-name").value.trim() || "Unnamed gear",
+      rarity: $("ge-rarity").value,
+      capacity: clamp(int($("ge-capacity").value, 0), 0, 999),
+      recharge: clamp(int($("ge-recharge").value, 0), 0, 99),
+      dmg: $("ge-dmg").value.trim().toLowerCase(),
+      element: $("ge-element").value,
+      effect: $("ge-effect").value.trim()
+    };
+    var idx = state.gear.findIndex(function (g) { return g.id === id; });
+    if (idx >= 0) state.gear[idx] = gear;
+    else state.gear.push(gear);
+    if (state.character.equippedShield === id && kind === "Shield") {
+      state.character.pools.shield.max = gear.capacity;
+      state.character.pools.shield.cur = Math.min(state.character.pools.shield.cur, gear.capacity);
+    }
+    save();
+    closeGearForm();
+    renderGear(); renderPools(); renderHud();
+  });
+  $("gearform-cancel").addEventListener("click", closeGearForm);
+  $("add-gear").addEventListener("click", function () { openGearForm(null); });
 
   /* ---------- global click handling ---------- */
   document.addEventListener("click", function (ev) {
@@ -1094,7 +1386,7 @@
     if (btn.id === "token-plus" || btn.id === "token-minus") {
       var d = btn.id === "token-plus" ? 1 : -1;
       state.character.badass = clamp(state.character.badass + d, 0, 99);
-      save(); renderHud();
+      save(); renderHud(); renderLog();
       return;
     }
     if (btn.id === "clear-log") { state.log = []; save(); renderLog(); return; }
@@ -1113,6 +1405,74 @@
       if (gunD && confirm("Scrap " + gunD.name + "? This can't be undone.")) {
         state.guns = state.guns.filter(function (g) { return g.id !== btn.dataset.del; });
         save(); renderGuns();
+      }
+      return;
+    }
+    if (btn.dataset.logact) {
+      var e0 = state.log[0];
+      if (!e0) return;
+      if (btn.dataset.logact === "boost") {
+        if (!spendToken()) return;
+        var b = rollDie(6);
+        e0.total += b;
+        e0.detail += " · badass +1d6: " + b;
+        save(); renderLog();
+      } else if (btn.dataset.logact === "boostdmg") {
+        if (!spendToken()) return;
+        var bd = rollDie(6);
+        e0.dmgTotal += bd;
+        e0.detail += " · badass +1d6 damage: " + bd + " → " + e0.dmgTotal + " total damage";
+        save(); renderLog();
+      } else if (btn.dataset.logact === "reroll") {
+        if (e0.kind === "attack") {
+          var gunR = state.guns.find(function (g) { return g.id === e0.gunId; });
+          if (!gunR || !spendToken()) return;
+          state.log.shift();
+          attack(gunR, "reroll · 1 token");
+        } else if (e0.kind === "grenade") {
+          if (!spendToken()) return;
+          state.log.shift();
+          throwGrenade({ name: e0.name, dmg: e0.spec, element: e0.element }, "reroll · 1 token");
+        } else if (e0.kind === "dice") {
+          if (!spendToken()) return;
+          state.log.shift();
+          rollBasic(e0.sides, e0.qty, e0.mod, "reroll · 1 token");
+        } else if (e0.kind === "check") {
+          if (!spendToken()) return;
+          state.log.shift();
+          rollCheck(e0.statKey, e0.label, "reroll · 1 token");
+        }
+      }
+      return;
+    }
+    if (btn.dataset.equip) {
+      var shield = state.gear.find(function (g) { return g.id === btn.dataset.equip; });
+      if (shield) {
+        state.character.equippedShield = shield.id;
+        state.character.pools.shield.max = int(shield.capacity, 0);
+        state.character.pools.shield.cur = int(shield.capacity, 0);
+        save(); renderGear(); renderPools(); renderHud();
+      }
+      return;
+    }
+    if (btn.dataset.throw) {
+      var nade = state.gear.find(function (g) { return g.id === btn.dataset.throw; });
+      if (nade) throwGrenade(nade);
+      return;
+    }
+    if (btn.dataset.gearedit) {
+      var gearE = state.gear.find(function (g) { return g.id === btn.dataset.gearedit; });
+      if (gearE) openGearForm(gearE);
+      return;
+    }
+    if (btn.dataset.geardel) {
+      var gearD = state.gear.find(function (g) { return g.id === btn.dataset.geardel; });
+      if (gearD && confirm("Scrap " + gearD.name + "? This can't be undone.")) {
+        state.gear = state.gear.filter(function (g) { return g.id !== btn.dataset.geardel; });
+        if (state.character.equippedShield === btn.dataset.geardel) {
+          delete state.character.equippedShield;
+        }
+        save(); renderGear();
       }
       return;
     }

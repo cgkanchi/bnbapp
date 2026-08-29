@@ -26,6 +26,9 @@
     --cut: 14px;
     --outline: #0c0a0e;
     --ink-shadow: 2px 2px 0 var(--outline);
+    --bullet-hole:
+      radial-gradient(circle at 38% 36%, rgba(216, 205, 236, 0.30) 0 9%, transparent 11%),
+      radial-gradient(circle, #06040a 0 34%, #251d30 35% 48%, rgba(96, 82, 118, 0.38) 49% 58%, rgba(18, 14, 24, 0.28) 59% 72%, transparent 74%);
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
@@ -65,8 +68,20 @@
     position: sticky;
     top: 0;
     z-index: 20;
-    background: var(--panel);
+    background:
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.014) 0 1px, transparent 1px 3px),
+      var(--panel);
     border-bottom: 1px solid var(--edge);
+  }
+  .hud::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(115deg, transparent 30%, rgba(222, 210, 244, 0.05) 30.4%, transparent 31.1%),
+      linear-gradient(100deg, transparent 64%, rgba(222, 210, 244, 0.04) 64.3%, transparent 64.9%),
+      linear-gradient(122deg, transparent 82%, rgba(5, 3, 8, 0.3) 82.3%, transparent 83%);
   }
   .hud-inner {
     max-width: 1060px;
@@ -161,10 +176,20 @@
     text-shadow: var(--ink-shadow);
   }
   .hazard {
+    position: relative;
     height: 10px;
     background: repeating-linear-gradient(-45deg, var(--accent) 0 14px, var(--outline) 14px 28px);
     border-bottom: 2px solid var(--outline);
   }
+  .bhole {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    background: var(--bullet-hole);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .bhole.small { width: 15px; height: 15px; }
 
   /* ---------- tabs ---------- */
   .tabs {
@@ -204,13 +229,26 @@
 
   /* ---------- panels ---------- */
   .panel {
+    position: relative;
     background:
       linear-gradient(115deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0) 45%),
+      linear-gradient(118deg, transparent 76%, rgba(226, 214, 248, 0.035) 76.3%, transparent 77%),
+      linear-gradient(105deg, transparent 38%, rgba(5, 3, 8, 0.16) 38.3%, transparent 38.9%),
       var(--panel);
     border: 2px solid var(--outline);
     padding: 16px;
     clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
     filter: drop-shadow(5px 5px 0 rgba(5, 3, 8, 0.5));
+  }
+  /* rivets in the two square corners (the other two are cut off) */
+  .panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 3.5px 3.5px, rgba(206, 194, 228, 0.20) 0 1.6px, rgba(10, 8, 14, 0.55) 1.9px 3.2px, transparent 3.8px) 6px 6px / 10px 10px no-repeat,
+      radial-gradient(circle at 3.5px 3.5px, rgba(206, 194, 228, 0.20) 0 1.6px, rgba(10, 8, 14, 0.55) 1.9px 3.2px, transparent 3.8px) calc(100% - 6px) calc(100% - 6px) / 10px 10px no-repeat;
   }
   .panel h2 {
     margin: 0 0 12px;
@@ -398,6 +436,18 @@
   }
   .gun-grid > .gun:nth-child(odd) { transform: rotate(-0.4deg); }
   .gun-grid > .gun:nth-child(even) { transform: rotate(0.35deg); }
+  /* the occasional stray round through a card, clear of the text */
+  .gun::after {
+    content: "";
+    position: absolute;
+    width: 19px;
+    height: 19px;
+    background: var(--bullet-hole);
+    pointer-events: none;
+    display: none;
+  }
+  .gun-grid > .gun:nth-child(3n)::after { display: block; top: 10px; right: 30px; }
+  .gun-grid > .gun:nth-child(4n + 1)::after { display: block; bottom: 46px; right: 14px; transform: scale(0.8); }
   .gun.legend { animation: legendglow 2.2s ease-in-out infinite alternate; }
   @keyframes legendglow {
     from { filter: drop-shadow(5px 5px 0 rgba(5, 3, 8, 0.5)) drop-shadow(0 0 6px color-mix(in srgb, var(--rarity) 30%, transparent)); }
@@ -704,7 +754,11 @@
       <button class="stepbtn" id="token-plus" aria-label="Gain a badass token">+</button>
     </div>
   </div>
-  <div class="hazard"></div>
+  <div class="hazard">
+    <span class="bhole" style="left: 21%; top: -6px;"></span>
+    <span class="bhole small" style="left: 46%; top: -3px;"></span>
+    <span class="bhole" style="left: 73%; top: -7px;"></span>
+  </div>
 </header>
 
 <nav class="tabs" role="tablist" aria-label="Sections">

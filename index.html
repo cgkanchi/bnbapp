@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ECHO Deck</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Big+Shoulders+Display:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&display=swap">
 <style>
   :root {
     --ground: #17141a;
@@ -21,14 +21,21 @@
     --armor: #d9b23a;
     --good: #8fd42a;
     --display: "Big Shoulders Display", "Arial Narrow", sans-serif;
+    --shout: "Bangers", "Big Shoulders Display", "Arial Narrow", sans-serif;
     --body: "Barlow", "Helvetica Neue", Arial, sans-serif;
     --cut: 14px;
+    --outline: #0c0a0e;
+    --ink-shadow: 2px 2px 0 var(--outline);
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
   html, body { margin: 0; padding: 0; }
   body {
-    background: var(--ground);
+    background:
+      radial-gradient(circle at 18% -12%, #262031 0%, rgba(38, 32, 49, 0) 52%),
+      radial-gradient(#1e1924 1px, transparent 1.5px),
+      var(--ground);
+    background-size: auto, 22px 22px, auto;
     color: var(--ink);
     font-family: var(--body);
     font-size: 15px;
@@ -70,14 +77,17 @@
     align-items: center;
     gap: 14px 22px;
   }
-  .logo { display: flex; flex-direction: column; line-height: 1; }
+  .logo { display: flex; flex-direction: column; line-height: 1; transform: rotate(-1.5deg); }
   .logo .title {
-    font-family: var(--display);
-    font-weight: 800;
-    font-size: 30px;
-    letter-spacing: 0.03em;
+    font-family: var(--shout);
+    font-weight: 400;
+    font-size: 36px;
+    letter-spacing: 0.05em;
     color: var(--accent);
     text-transform: uppercase;
+    text-shadow:
+      -2px -2px 0 var(--outline), 2px -2px 0 var(--outline),
+      -2px 2px 0 var(--outline), 3px 3px 0 var(--outline);
   }
   .logo .sub {
     font-size: 10px;
@@ -131,9 +141,10 @@
     align-items: center;
     gap: 8px;
     background: var(--ground);
-    border: 1px solid var(--edge);
+    border: 2px solid var(--outline);
     padding: 6px 10px;
     clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+    transform: rotate(0.8deg);
   }
   .tokens .tlabel {
     font-size: 10px;
@@ -142,17 +153,17 @@
     color: var(--accent);
   }
   .tokens .tcount {
-    font-family: var(--display);
-    font-weight: 800;
-    font-size: 26px;
+    font-family: var(--shout);
+    font-size: 28px;
     min-width: 34px;
     text-align: center;
     font-variant-numeric: tabular-nums;
+    text-shadow: var(--ink-shadow);
   }
   .hazard {
-    height: 8px;
-    background: repeating-linear-gradient(-45deg, var(--accent) 0 12px, #221c10 12px 24px);
-    opacity: 0.85;
+    height: 10px;
+    background: repeating-linear-gradient(-45deg, var(--accent) 0 14px, var(--outline) 14px 28px);
+    border-bottom: 2px solid var(--outline);
   }
 
   /* ---------- tabs ---------- */
@@ -164,22 +175,24 @@
     gap: 8px;
   }
   .tab {
-    font-family: var(--display);
-    font-weight: 700;
-    font-size: 20px;
+    font-family: var(--shout);
+    font-weight: 400;
+    font-size: 22px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--muted);
     background: var(--panel);
-    border: 1px solid var(--edge);
+    border: 2px solid var(--outline);
     border-bottom: none;
-    padding: 8px 22px 6px;
+    padding: 8px 22px 5px;
     clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+    text-shadow: var(--ink-shadow);
   }
   .tab[aria-selected="true"] {
     color: var(--accent-ink);
     background: var(--accent);
-    border-color: var(--accent);
+    text-shadow: none;
+    transform: translateY(-2px) rotate(-0.6deg);
   }
   main {
     max-width: 1060px;
@@ -191,20 +204,24 @@
 
   /* ---------- panels ---------- */
   .panel {
-    background: var(--panel);
-    border: 1px solid var(--edge);
+    background:
+      linear-gradient(115deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0) 45%),
+      var(--panel);
+    border: 2px solid var(--outline);
     padding: 16px;
     clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
+    filter: drop-shadow(5px 5px 0 rgba(5, 3, 8, 0.5));
   }
   .panel h2 {
     margin: 0 0 12px;
-    font-family: var(--display);
-    font-weight: 700;
-    font-size: 22px;
+    font-family: var(--shout);
+    font-weight: 400;
+    font-size: 24px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--accent);
     text-wrap: balance;
+    text-shadow: var(--ink-shadow);
   }
   .hint { color: var(--muted); font-size: 12px; margin: 4px 0 0; }
 
@@ -247,17 +264,20 @@
   .die-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
   .die {
     background: var(--panel-2);
-    border: 1px solid var(--edge);
+    border: 2px solid var(--outline);
     color: var(--ink);
-    font-family: var(--display);
-    font-weight: 800;
-    font-size: 24px;
+    font-family: var(--shout);
+    font-weight: 400;
+    font-size: 26px;
     letter-spacing: 0.04em;
-    padding: 12px 0 10px;
+    padding: 12px 0 9px;
     clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    filter: drop-shadow(3px 3px 0 rgba(5, 3, 8, 0.5));
+    text-shadow: var(--ink-shadow);
   }
   .die:hover { background: var(--edge); }
-  .die.d20 { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .die:active { transform: translate(2px, 2px); filter: drop-shadow(1px 1px 0 rgba(5, 3, 8, 0.5)); }
+  .die.d20 { background: var(--accent); color: var(--accent-ink); text-shadow: none; }
   .die.d20:hover { background: #ffcb3d; }
   .checks { margin-top: 18px; }
   .checks h3, .gun-list-head h3 {
@@ -306,17 +326,23 @@
     padding: 8px 12px;
   }
   .log .total {
-    font-family: var(--display);
-    font-weight: 800;
-    font-size: 38px;
+    font-family: var(--shout);
+    font-weight: 400;
+    font-size: 40px;
     line-height: 1;
     text-align: center;
     font-variant-numeric: tabular-nums;
+    text-shadow: var(--ink-shadow);
   }
-  .log li.nat20 { border-color: var(--accent); }
-  .log li.nat20 .total { color: var(--accent); }
+  .log li.nat20 {
+    border-color: var(--accent);
+    background:
+      radial-gradient(circle at 36px 50%, color-mix(in srgb, var(--accent) 16%, transparent) 0%, transparent 58%),
+      var(--ground);
+  }
+  .log li.nat20 .total { color: var(--accent); transform: rotate(-3deg); }
   .log li.nat1 { border-color: var(--crit); }
-  .log li.nat1 .total { color: var(--crit); }
+  .log li.nat1 .total { color: var(--crit); transform: rotate(2deg); }
   .log .what { font-weight: 600; font-size: 13px; }
   .log .detail { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
   .log .flag {
@@ -349,27 +375,46 @@
   .gun-list-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
   .primarybtn {
     background: var(--accent);
-    border: 1px solid var(--accent);
+    border: 2px solid var(--outline);
     color: var(--accent-ink);
-    font-family: var(--display);
-    font-weight: 700;
-    font-size: 18px;
+    font-family: var(--shout);
+    font-weight: 400;
+    font-size: 19px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    padding: 8px 18px 6px;
+    padding: 8px 18px 5px;
     clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    filter: drop-shadow(3px 3px 0 rgba(5, 3, 8, 0.5));
   }
   .primarybtn:hover { background: #ffcb3d; }
+  .primarybtn:active { transform: translate(2px, 2px); filter: drop-shadow(1px 1px 0 rgba(5, 3, 8, 0.5)); }
   .gun-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 14px; }
-  .gun { border-left: 4px solid var(--rarity, var(--muted)); display: flex; flex-direction: column; gap: 10px; }
+  .gun {
+    border-left: 5px solid var(--rarity, var(--muted));
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    filter: drop-shadow(5px 5px 0 rgba(5, 3, 8, 0.5)) drop-shadow(0 0 10px color-mix(in srgb, var(--rarity, transparent) 28%, transparent));
+  }
+  .gun-grid > .gun:nth-child(odd) { transform: rotate(-0.4deg); }
+  .gun-grid > .gun:nth-child(even) { transform: rotate(0.35deg); }
+  .gun.legend { animation: legendglow 2.2s ease-in-out infinite alternate; }
+  @keyframes legendglow {
+    from { filter: drop-shadow(5px 5px 0 rgba(5, 3, 8, 0.5)) drop-shadow(0 0 6px color-mix(in srgb, var(--rarity) 30%, transparent)); }
+    to { filter: drop-shadow(5px 5px 0 rgba(5, 3, 8, 0.5)) drop-shadow(0 0 16px color-mix(in srgb, var(--rarity) 55%, transparent)); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .gun.legend { animation: none; }
+  }
   .gun .gname {
-    font-family: var(--display);
-    font-weight: 800;
-    font-size: 24px;
-    letter-spacing: 0.03em;
+    font-family: var(--shout);
+    font-weight: 400;
+    font-size: 26px;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
-    line-height: 1.05;
+    line-height: 1.02;
     overflow-wrap: anywhere;
+    text-shadow: var(--ink-shadow);
   }
   .hud-char .who, .log .what, .gun-result .rdetail, .geffect { overflow-wrap: anywhere; }
   .gun .gmeta { color: var(--muted); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
@@ -404,17 +449,20 @@
   .attackbtn {
     flex: 1;
     background: var(--crit);
-    border: 1px solid var(--crit);
+    border: 2px solid var(--outline);
     color: #fff;
-    font-family: var(--display);
-    font-weight: 800;
-    font-size: 20px;
+    font-family: var(--shout);
+    font-weight: 400;
+    font-size: 22px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    padding: 8px 0 6px;
+    padding: 8px 0 5px;
     clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    text-shadow: var(--ink-shadow);
+    filter: drop-shadow(3px 3px 0 rgba(5, 3, 8, 0.5));
   }
   .attackbtn:hover { background: #ff8248; }
+  .attackbtn:active { transform: translate(2px, 2px); filter: drop-shadow(1px 1px 0 rgba(5, 3, 8, 0.5)); }
   .gun-result {
     background: var(--ground);
     border: 1px solid var(--edge);
@@ -427,9 +475,9 @@
   .geffect { color: var(--muted); font-size: 13px; font-style: italic; }
   .chip.equipped { border-color: var(--good); color: var(--good); }
   .chip.favored { border-color: var(--accent); color: var(--accent); }
-  .throwbtn { background: var(--shield); border-color: var(--shield); color: #08202e; }
+  .throwbtn { background: var(--shield); border-color: var(--outline); color: #08202e; text-shadow: none; }
   .throwbtn:hover { background: #7bccff; }
-  .drinkbtn { background: var(--good); border-color: var(--good); color: #14230a; }
+  .drinkbtn { background: var(--good); border-color: var(--outline); color: #14230a; text-shadow: none; }
   .drinkbtn:hover { background: #a8e84a; }
   .drinkbtn:disabled { opacity: 0.35; cursor: not-allowed; }
   .barselect {
@@ -482,12 +530,13 @@
     flex: 1;
     min-width: 0;
     color: var(--accent);
-    font-family: var(--display);
-    font-weight: 700;
-    font-size: 20px;
+    font-family: var(--shout);
+    font-weight: 400;
+    font-size: 23px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     overflow-wrap: anywhere;
+    text-shadow: var(--ink-shadow);
   }
   .tree-pts { color: var(--accent); font-size: 12px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .tier-row { display: grid; grid-template-columns: 56px 1fr; gap: 8px; margin-bottom: 8px; }
@@ -1556,7 +1605,7 @@
         ? '<div class="gun-result"><div class="rline">' + esc(g.lastResult.headline) +
           '</div><div class="rdetail">' + esc(g.lastResult.detail) + "</div></div>"
         : "";
-      return '<div class="panel gun" style="--rarity:' + rarity + '">' +
+      return '<div class="panel gun' + (g.rarity === "Legendary" ? " legend" : "") + '" style="--rarity:' + rarity + '">' +
         '<div><div class="gname">' + esc(g.name) + "</div>" +
         '<div class="gmeta">' + esc(g.rarity) + " " + esc(g.type) +
         (g.mfr ? " · " + esc(g.mfr) : "") + " · LV " + int(g.level, 1) + "</div></div>" +
